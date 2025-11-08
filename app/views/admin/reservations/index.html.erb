@@ -1,0 +1,55 @@
+<div class="header">
+  <h1>単日スケジュール - <%= @date.year %>年<%= @date.month %>月<%= @date.day %>日</h1>
+  <div class="header-buttons">
+    <% if current_user&.admin? %>
+      <span class="admin-name"><%= current_user.name.presence || "管理者さん" %></span>
+    <% end %>
+    <%= link_to "👥 予約者リスト", list_admin_reservations_path, class: "btn" %>
+    <a href="/admin/reservations/calendars" class="btn">📅 カレンダー表示</a>
+    <button class="btn btn-settings" onclick="openSettingsModal()">⚙️ 設定</button>
+  </div>
+</div>
+
+<div class="date-navigation">
+  <a href="/admin/reservations?date=<%= (@date - 1.day).strftime('%Y-%m-%d') %>" class="btn">◀ 前日</a>
+  <a href="/admin/reservations?date=<%= Date.today.strftime('%Y-%m-%d') %>" class="btn">今日</a>
+  <a href="/admin/reservations?date=<%= (@date + 1.day).strftime('%Y-%m-%d') %>" class="btn">翌日 ▶</a>
+  <input type="date" id="datePicker" value="<%= @date.strftime('%Y-%m-%d') %>">
+</div>
+
+<div id="status">カレンダーを読み込んでいます...</div>
+<div id="calendar" data-date="<%= @date.strftime('%Y-%m-%d') %>"></div>
+
+<!-- 予約詳細モーダル -->
+<div id="reservationModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>予約詳細</h2>
+      <button class="close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- 設定モーダル -->
+<div id="settingsModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>設定</h2>
+      <button class="close" onclick="closeSettingsModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-content">
+        <%= link_to "情報変更", edit_user_registration_path, class: "btn btn-edit" %>
+        <p>現在ログイン中です</p>
+        <%= button_to "ログアウト", destroy_user_session_path, method: :delete, class: "btn btn-logout", form: { data: { turbo: false } } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%= javascript_include_tag "index-schedule", "data-turbo-track": "reload", defer: true %>
+
+<script>
+  <%= File.read(Rails.root.join('app/javascript/index-schedule.js')).html_safe %>
+</script>

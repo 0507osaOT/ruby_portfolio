@@ -1,0 +1,645 @@
+/* app/assets/stylesheets/admin/list-styles.css */
+
+.reservation-list-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.reservation-list-container h1 {
+  font-size: 2rem;
+  margin-bottom: 30px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.admin-name {
+  color: #007bff;
+  font-weight: 600;
+  padding: 5px 15px;
+  background-color: #e7f3ff;
+  border-radius: 5px;
+  border-left: 4px solid #007bff;
+}
+
+/* 検索フォームボックス */
+.search-form-box {
+  border: 2px solid #333;
+  border-radius: 8px;
+  padding: 30px;
+  margin-bottom: 40px;
+  background-color: #f9f9f9;
+}
+
+.search-form-box h2 {
+  margin-bottom: 25px;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+/* 縦並び検索入力 */
+.search-inputs-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.search-row {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 15px;
+  align-items: center;
+  padding: 15px;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.search-label {
+  font-weight: 600;
+  color: #333;
+  font-size: 16px;
+}
+
+/* 入力フィールド */
+.search-input {
+  padding: 10px 15px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 15px;
+  width: 100%;
+  transition: border-color 0.3s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+/* 日時入力 */
+.datetime-inputs {
+  display: flex;
+  gap: 15px;
+}
+
+.date-input,
+.time-input {
+  flex: 1;
+}
+
+/* ボタン */
+.search-buttons {
+  margin-top: 25px;
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.btn {
+  padding: 12px 40px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-block;
+  transition: all 0.3s;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #545b62;
+  transform: translateY(-2px);
+}
+
+/* 戻るボタン */
+.btn-back {
+  background-color: #28a745;
+  color: white;
+  padding: 10px 30px;
+  font-size: 15px;
+}
+
+.btn-back:hover {
+  background-color: #218838;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+/* 検索結果エリア */
+.results-container {
+  margin-top: 40px;
+}
+
+/* 検索結果ヘッダー（検索結果と戻るボタンを横並び） */
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  padding-bottom: 10px;
+  border-bottom: 3px solid #007bff;
+}
+
+.results-header h2 {
+  font-size: 1.4rem;
+  color: #333;
+  margin: 0;
+}
+
+/* 予約カードグリッド（1列の横長レイアウト） */
+.reservations-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+/* 予約カード（2行レイアウト） */
+.reservation-card {
+  background-color: white;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  padding: 15px 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  pointer-events: auto;
+}
+
+.reservation-card > * {
+  pointer-events: auto;
+}
+
+.reservation-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+/* カードの行 */
+.card-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.card-row-first {
+  min-height: 50px;
+  width: 100%;
+}
+
+.card-row-second {
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+}
+
+.card-item {
+  display: flex;
+  flex-direction: column;
+  min-width: 80px;
+  flex: 0 0 auto;
+  padding-right: 3cm;
+  border-right: 1px solid #eee;
+  margin-right: 3cm;
+  white-space: nowrap;
+}
+
+/* 名前項目の幅を狭くする */
+.card-row-first .card-item:first-child {
+  min-width: 80px;
+  max-width: 120px;
+}
+
+/* 電話番号 */
+.card-row-first .card-item:nth-child(2) {
+  min-width: 100px;
+  max-width: 120px;
+}
+
+/* メールアドレス */
+.card-row-first .card-item:nth-child(3) {
+  min-width: 120px;
+  max-width: 180px;
+}
+
+/* 予約日時項目 */
+.card-row-first .card-item.datetime-item {
+  min-width: 200px;
+  max-width: 250px;
+}
+
+.card-item.notes-item {
+  flex: 1 1 auto;
+  min-width: 150px;
+  max-width: none;
+  padding-right: 0;
+  margin-right: 0;
+  border-right: none;
+}
+
+.card-item.notes-item .card-value {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.card-item:last-of-type {
+  border-right: none;
+  padding-right: 0;
+  margin-right: 0;
+}
+
+/* 最後の項目の境界線を削除 */
+.card-row-first .card-item:last-child {
+  border-right: none;
+  padding-right: 0;
+  margin-right: 0;
+}
+
+.card-label {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.card-value {
+  font-size: 16px;
+  color: #333;
+  word-wrap: break-word;
+  line-height: 1.4;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-row-first .card-value {
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.card-item.notes-item .card-value {
+  white-space: normal;
+}
+
+.card-item.datetime-item {
+  min-width: 220px;
+  max-width: 280px;
+  padding-right: 4cm;
+  margin-right: 4cm;
+}
+
+.card-item.datetime-item .card-value {
+  white-space: nowrap;
+  font-size: 17px;
+  padding-left: 0;
+}
+
+/* アクションボタン */
+.card-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  min-width: 80px;
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+/* 管理者用アクションボタン（1行目と2行目の間に配置） */
+.card-actions-admin {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  min-width: 80px;
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.btn-detail,
+.btn-edit,
+.btn-delete {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  text-decoration: none;
+  display: block;
+  text-align: center;
+  transition: all 0.3s;
+  font-weight: 600;
+  position: relative;
+  z-index: 10;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.btn-detail {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.btn-detail:hover {
+  background-color: #138496;
+}
+
+.btn-edit {
+  background-color: #ffc107;
+  color: #333;
+}
+
+.btn-edit:hover {
+  background-color: #e0a800;
+}
+
+.btn-delete {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-delete:hover {
+  background-color: #c82333;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-danger:hover {
+  background-color: #c82333;
+}
+
+/* 結果なし */
+.no-results {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+  font-size: 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+/* ページネーション */
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+  gap: 5px;
+}
+
+.pagination a,
+.pagination span {
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  text-decoration: none;
+  color: #333;
+  transition: all 0.3s;
+}
+
+.pagination a:hover {
+  background-color: #f8f9fa;
+  border-color: #007bff;
+}
+
+.pagination .current {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 1200px) {
+  .reservation-card {
+    flex-wrap: wrap;
+  }
+  
+  .card-item {
+    min-width: 100px;
+  }
+}
+
+@media (max-width: 900px) {
+  .reservation-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .card-item {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #eee;
+    padding-right: 0;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+  }
+  
+  .card-item:last-of-type {
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+  
+  .card-actions {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .search-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .search-label {
+    margin-bottom: 5px;
+  }
+  
+  .results-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 600px) {
+  .datetime-inputs {
+    flex-direction: column;
+  }
+}
+
+/* モーダルスタイル */
+.modal {
+  display: none !important;
+  position: fixed;
+  z-index: 10000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  overflow: auto;
+}
+
+.modal[style*="display: block"] {
+  display: block !important;
+}
+
+.modal-content {
+  background-color: white;
+  margin: 10% auto;
+  padding: 30px;
+  border-radius: 8px;
+  width: 80%;
+  max-width: 600px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 15px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.close {
+  color: #aaa;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.3s;
+}
+
+.close:hover {
+  color: #000;
+}
+
+.modal-body {
+  line-height: 1.8;
+}
+
+.modal-body p {
+  margin: 10px 0;
+}
+
+.modal-body strong {
+  display: inline-block;
+  min-width: 100px;
+  color: #666;
+  font-weight: 600;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+/* フォームスタイル */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #333;
+}
+
+.form-control {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.btn-primary {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-primary:hover {
+  background-color: #218838;
+}

@@ -1,0 +1,70 @@
+<% content_for :head do %>
+  <%= stylesheet_link_tag "admin/index-schedule", "data-turbo-track": "reload" %>
+<% end %>
+
+<div class="header">
+  <h1>予約詳細</h1>
+  <div class="header-buttons">
+    <%= link_to "予約一覧に戻る", new_reservation_path, class: "btn" %>
+    <%= button_to "ログアウト", destroy_user_session_path, method: :delete, class: "btn btn-logout", form: { data: { turbo: false } } %>
+  </div>
+</div>
+
+<div style="max-width: 800px; margin: 20px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+  <% if notice %>
+    <div style="background-color: #d4edda; color: #155724; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+      <%= notice %>
+    </div>
+  <% end %>
+
+  <h2 style="color: #333; margin-bottom: 30px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px;">予約情報</h2>
+  
+  <div style="line-height: 2;">
+    <p>
+      <strong style="display: inline-block; width: 150px; color: #666;">お名前:</strong>
+      <%= @reservation.customer_name %>
+    </p>
+    
+    <p>
+      <strong style="display: inline-block; width: 150px; color: #666;">メールアドレス:</strong>
+      <%= @reservation.customer_email %>
+    </p>
+    
+    <p>
+      <strong style="display: inline-block; width: 150px; color: #666;">電話番号:</strong>
+      <%= @reservation.customer_phone %>
+    </p>
+    
+    <p>
+      <strong style="display: inline-block; width: 150px; color: #666;">予約日時:</strong>
+      <%= @reservation.start_time.strftime("%Y年%m月%d日 %H:%M") %> - <%= @reservation.end_time.strftime("%H:%M") %>
+    </p>
+    
+    <p>
+      <strong style="display: inline-block; width: 150px; color: #666;">ステータス:</strong>
+      <% 
+        status = @reservation.status || 'confirmed'
+        status_text = case status
+                      when 'confirmed' then '確定'
+                      when 'pending' then '保留中'
+                      when 'cancelled' then 'キャンセル'
+                      else status
+                      end
+      %>
+      <span class="badge <%= status %>">
+        <%= status_text %>
+      </span>
+    </p>
+    
+    <% if @reservation.notes.present? %>
+      <p>
+        <strong style="display: inline-block; width: 150px; color: #666;">備考:</strong>
+        <%= simple_format(@reservation.notes) %>
+      </p>
+    <% end %>
+  </div>
+  
+  <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #f0f0f0;">
+    <%= link_to "新しい予約を作成", new_reservation_path, class: "btn" %>
+  </div>
+</div>

@@ -1,0 +1,24 @@
+ja:
+  activerecord:
+    models:
+      admin: 管理者
+      user: ユーザー
+      reservation: 予約
+    attributes:
+      admin:
+        email: メールアドレス
+        password: パスワード
+        password_confirmation: パスワード（確認）
+        remember_me: ログイン状態を保持
+      user:
+        email: メールアドレス
+        password: パスワード
+        password_confirmation: パスワード（確認）
+      reservation:
+        customer_name: 顧客名
+        email: メールアドレス
+        phone: 電話番号
+        start_time: 開始時刻
+        end_time: 終了時刻
+        status: ステータス
+        notes: 備考

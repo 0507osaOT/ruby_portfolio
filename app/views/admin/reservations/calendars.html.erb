@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>カレンダー - 予約管理システム</title>
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+  
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  
+  <!-- FullCalendar CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.css" rel="stylesheet" />
+  
+  <!-- カスタムCSS - Railsのアセットパイプライン経由 -->
+  <%= stylesheet_link_tag 'admin/calendar-styles', media: 'all' %>
+  
+  <!-- FullCalendar JS -->
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+  
+  <!-- グローバル変数の設定 -->
+  <script>
+    window.calendarEventsUrl = '<%= calendar_events_admin_reservations_path %>';
+    window.reservationsPath = '<%= admin_reservations_path %>';
+  </script>
+</head>
+<body>
+  <div class="header">
+    <h1>カレンダー - 予約管理システム</h1>
+    <div class="header-buttons">
+      <span class="admin-name"><%= current_user.name.presence || "管理者さん" %></span>
+      <%= link_to '単日スケジュールに戻る', admin_reservations_path, class: 'btn' %>
+    </div>
+  </div>
+   
+  <div class="controls">
+    <button class="btn" id="prev-btn">◀ 前へ</button>
+    <button class="btn" id="today-btn">今日</button>
+    <button class="btn" id="next-btn">次へ ▶</button>
+    <input type="date" id="datePicker">
+  </div>
+ 
+  <div id="calendar"></div>
+ 
+  <div id="reservationModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>予約詳細</h2>
+        <button class="close" id="close-modal">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+  
+  <!-- カスタムJS - Cursor内ブラウザ対応のためインラインで読み込み -->
+  <script>
+    // calendar-script.js の内容を直接記述
+    console.log('calendar-script.js loaded');
+    
+    let calendar;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOM Content Loaded');
+      
+      const calendarEl = document.getElementById('calendar');
+      
+      if (!calendarEl) {
+        console.log('Calendar element not found - not on calendar page');
+        return;
+      }
+      
+      console.log('Calendar element found');
+      console.log('FullCalendar available:', typeof FullCalendar !== 'undefined');
+      console.log('Events URL:', window.calendarEventsUrl);
+      
+      // FullCalendarが読み込まれているか確認
+      if (typeof FullCalendar === 'undefined') {
+        console.error('FullCalendar is not loaded');
+        alert('FullCalendarが読み込まれていません');
+        return;
+      }
+      
+      // ユーザーごとに色を割り当てる関数（ハッシュベースで一貫性を保つ）
+      const colorPalette = [
+        { bg: '#3498db', text: '#ffffff' }, // 青
+        { bg: '#e74c3c', text: '#ffffff' }, // 赤
+        { bg: '#2ecc71', text: '#ffffff' }, // 緑
+        { bg: '#f39c12', text: '#ffffff' }, // オレンジ
+        { bg: '#9b59b6', text: '#ffffff' }, // 紫
+        { bg: '#1abc9c', text: '#ffffff' }, // ターコイズ
+        { bg: '#e67e22', text: '#ffffff' }, // ダークオレンジ
+        { bg: '#34495e', text: '#ffffff' }, // ダークグレー
+        { bg: '#16a085', text: '#ffffff' }, // ダークターコイズ
+        { bg: '#c0392b', text: '#ffffff' }  // ダークレッド
+      ];
+      
+      function getUserColor(userId) {
+        if (!userId) {
+          return { bg: '#95a5a6', text: '#ffffff' }; // デフォルト色（グレー）
+        }
+        
+        // シンプルなハッシュ関数で一貫した色を生成
+        let hash = 0;
+        const str = String(userId);
+        for (let i = 0; i < str.length; i++) {
+          hash = ((hash << 5) - hash) + str.charCodeAt(i);
+          hash = hash & hash; // 32bit整数に変換
+        }
+        const colorIndex = Math.abs(hash) % colorPalette.length;
+        return colorPalette[colorIndex];
+      }
+      
+      // カレンダーの初期化
+      calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'ja',
+        headerToolbar: false,
+        height: 'auto',
+        
+        events: {
+          url: window.calendarEventsUrl,
+          method: 'GET',
+          failure: function(error) {
+            console.error('Failed to load events:', error);
+            alert('予約データの読み込みに失敗しました');
+          }
+        },
+        
+        eventDidMount: function(info) {
+          const userId = info.event.extendedProps.user_id;
+          const color = getUserColor(userId);
+          
+          // 背景色とテキスト色を設定
+          info.el.style.backgroundColor = color.bg;
+          info.el.style.borderColor = color.bg;
+          info.el.style.color = color.text;
+          info.el.style.fontWeight = 'bold';
+          info.el.style.padding = '4px 6px';
+          info.el.style.borderRadius = '4px';
+          
+          // イベントタイトル（名前）のスタイルを改善
+          const titleEl = info.el.querySelector('.fc-event-title');
+          if (titleEl) {
+            titleEl.style.color = color.text;
+            titleEl.style.fontWeight = 'bold';
+            titleEl.style.fontSize = '13px';
+            titleEl.style.textShadow = '0 1px 2px rgba(0,0,0,0.3)';
+          }
+        },
+        
+        eventClick: function(info) {
+          console.log('Event clicked');
+          showReservationDetails(info.event);
+        },
+        
+        dateClick: function(info) {
+          console.log('Date clicked: ' + info.dateStr);
+        }
+      });
+      
+      calendar.render();
+      console.log('Calendar rendered successfully');
+      
+      // ナビゲーションボタン
+      const prevBtn = document.getElementById('prev-btn');
+      const todayBtn = document.getElementById('today-btn');
+      const nextBtn = document.getElementById('next-btn');
+      
+      if (prevBtn) {
+        prevBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          console.log('Prev clicked');
+          calendar.prev();
+          updateDatePicker();
+        });
+        console.log('Prev button listener attached');
+      }
+      
+      if (todayBtn) {
+        todayBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          console.log('Today clicked');
+          calendar.today();
+          updateDatePicker();
+        });
+        console.log('Today button listener attached');
+      }
+      
+      if (nextBtn) {
+        nextBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          console.log('Next clicked');
+          calendar.next();
+          updateDatePicker();
+        });
+        console.log('Next button listener attached');
+      }
+      
+      // 日付ピッカー
+      const datePicker = document.getElementById('datePicker');
+      if (datePicker) {
+        datePicker.addEventListener('change', function() {
+          console.log('Date picker changed to:', this.value);
+          calendar.gotoDate(this.value);
+        });
+        console.log('Date picker listener attached');
+      }
+      
+      updateDatePicker();
+      
+      // モーダル
+      const closeModalBtn = document.getElementById('close-modal');
+      if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          closeModal();
+        });
+        console.log('Close modal listener attached');
+      }
+      
+      window.addEventListener('click', function(event) {
+        const modal = document.getElementById('reservationModal');
+        if (event.target === modal) {
+          closeModal();
+        }
+      });
+    });
+    
+    function updateDatePicker() {
+      const datePicker = document.getElementById('datePicker');
+      if (!datePicker || !calendar) return;
+      
+      const currentDate = calendar.getDate();
+      const year = currentDate.getFullYear();
+      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const day = String(currentDate.getDate()).padStart(2, '0');
+      datePicker.value = year + '-' + month + '-' + day;
+      console.log('Date picker updated to:', datePicker.value);
+    }
+    
+    function showReservationDetails(event) {
+      const modal = document.getElementById('reservationModal');
+      const modalBody = document.getElementById('modalBody');
+      
+      if (!modal || !modalBody) return;
+      
+      const props = event.extendedProps;
+      const statusBadge = getStatusBadge(props.status);
+      
+      const startTime = event.start.toLocaleString('ja-JP', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      
+      const endTime = event.end ? event.end.toLocaleString('ja-JP', {
+        hour: '2-digit',
+        minute: '2-digit'
+      }) : '';
+      
+      let html = '<p><strong>お客様名:</strong> ' + (props.customer || 'N/A') + '</p>';
+      html += '<p><strong>電話番号:</strong> ' + (props.phone || 'N/A') + '</p>';
+      
+      if (props.email) {
+        html += '<p><strong>メール:</strong> ' + props.email + '</p>';
+      }
+      
+      html += '<p><strong>開始時刻:</strong> ' + startTime + '</p>';
+      
+      if (endTime) {
+        html += '<p><strong>終了時刻:</strong> ' + endTime + '</p>';
+      }
+      
+      html += '<p><strong>ステータス:</strong> ' + statusBadge + '</p>';
+      
+      if (props.notes) {
+        html += '<p><strong>備考:</strong> ' + props.notes + '</p>';
+      }
+      
+      html += '<hr>';
+      html += '<a href="' + window.reservationsPath + '/' + event.id + '" class="btn">詳細を見る</a>';
+      
+      modalBody.innerHTML = html;
+      modal.style.display = 'block';
+    }
+    
+    function getStatusBadge(status) {
+      const badges = {
+        'pending': '<span class="badge pending">保留中</span>',
+        'confirmed': '<span class="badge confirmed">確定</span>',
+        'cancelled': '<span class="badge cancelled">キャンセル</span>'
+      };
+      return badges[status] || '<span class="badge">' + status + '</span>';
+    }
+    
+    function closeModal() {
+      const modal = document.getElementById('reservationModal');
+      if (modal) {
+        modal.style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <h1 class="auth-title">アカウント情報変更</h1>
+
+    <% if notice %>
+      <div class="alert alert-success"><%= notice %></div>
+    <% end %>
+    <% if alert %>
+      <div class="alert alert-danger"><%= alert %></div>
+    <% end %>
+
+    <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f| %>
+      <%= render "devise/shared/error_messages", resource: resource %>
+
+      <div class="form-group">
+        <%= f.label :name, "お名前" %>
+        <%= f.text_field :name, autofocus: true, autocomplete: "name", class: "form-input" %>
+      </div>
+
+      <div class="form-group">
+        <%= f.label :email, "メールアドレス" %>
+        <%= f.email_field :email, autocomplete: "email", class: "form-input" %>
+        <p class="form-hint">現在のメールアドレス: <strong><%= current_user.email %></strong></p>
+      </div>
+
+      <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
+        <div class="alert alert-warning">
+          確認待ちのメールアドレス: <%= resource.unconfirmed_email %>
+        </div>
+      <% end %>
+
+      <div class="form-group">
+        <%= f.label :password, "新しいパスワード" %>
+        <span class="form-hint">（変更しない場合は空白のまま）</span>
+        <%= f.password_field :password, autocomplete: "new-password", class: "form-input" %>
+        <% if @minimum_password_length %>
+          <p class="form-hint">（<%= @minimum_password_length %>文字以上）</p>
+        <% end %>
+      </div>
+
+      <div class="form-group">
+        <%= f.label :password_confirmation, "新しいパスワード（確認）" %>
+        <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "form-input" %>
+      </div>
+
+      <div class="form-group">
+        <%= f.label :current_password, "現在のパスワード" %>
+        <span class="form-hint">（変更を確認するために必要です）</span>
+        <%= f.password_field :current_password, autocomplete: "current-password", class: "form-input" %>
+      </div>
+
+      <div class="form-actions">
+        <%= f.submit "更新する", class: "btn btn-primary" %>
+      </div>
+    <% end %>
+
+    <div class="auth-links">
+      <%= link_to "戻る", :back, class: "btn btn-secondary" %>
+      <%= button_to "ログアウト", destroy_user_session_path, method: :delete, class: "btn btn-danger", form: { data: { turbo: false, confirm: "ログアウトしますか？" } } %>
+    </div>
+
+    <hr />
+
+    <h3>アカウント削除</h3>
+    <p>アカウントを削除しますか？</p>
+    <%= button_to "アカウントを削除", registration_path(resource_name), 
+        data: { confirm: "本当に削除しますか？この操作は取り消せません。", turbo_confirm: "本当に削除しますか？この操作は取り消せません。" }, 
+        method: :delete, 
+        class: "btn btn-danger" %>
+  </div>
+</div>

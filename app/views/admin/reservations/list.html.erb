@@ -1,0 +1,218 @@
+<!-- app/views/admin/reservations/list.html.erb -->
+<% content_for :head do %>
+  <%= stylesheet_link_tag "admin/list-styles", "data-turbo-track": "reload" %>
+<% end %>
+
+<div class="reservation-list-container">
+  <h1>予約者リスト</h1>
+  
+  <!-- 検索フォーム -->
+  <div class="search-form-box">
+    <h2>検索フォーム</h2>
+    <%= form_with url: list_admin_reservations_path, method: :get, local: true, class: "search-form" do |f| %>
+      
+      <div class="search-inputs-vertical">
+        <!-- 名前 -->
+        <div class="search-row">
+          <label class="search-label">名前</label>
+          <%= f.text_field :name, value: params[:name], placeholder: "名前で検索（部分一致）", class: "search-input" %>
+        </div>
+        
+        <!-- 電話番号 -->
+        <div class="search-row">
+          <label class="search-label">電話番号</label>
+          <%= f.text_field :phone, value: params[:phone], placeholder: "電話番号で検索（部分一致）", class: "search-input" %>
+        </div>
+        
+        <!-- アドレス -->
+        <div class="search-row">
+          <label class="search-label">アドレス</label>
+          <%= f.email_field :email, value: params[:email], placeholder: "メールアドレスで検索（部分一致）", class: "search-input" %>
+        </div>
+        
+        <!-- 予約日・時間 -->
+        <div class="search-row">
+          <label class="search-label">予約日・時間</label>
+          <div class="datetime-inputs">
+            <%= f.date_field :reservation_date, value: params[:reservation_date], class: "search-input date-input" %>
+            <%= f.time_field :reservation_time, value: params[:reservation_time], class: "search-input time-input" %>
+          </div>
+        </div>
+      </div>
+      
+      <div class="search-buttons">
+        <%= f.submit "検索", class: "btn btn-primary" %>
+        <%= link_to "クリア", list_admin_reservations_path, class: "btn btn-secondary" %>
+      </div>
+    <% end %>
+  </div>
+  
+  <!-- 予約者リスト -->
+  <div class="results-container">
+    <div class="results-header">
+      <h2>検索結果: <%= @reservations.total_count %>件</h2>
+      <%= link_to "← 戻る", admin_reservations_path, class: "btn btn-back" %>
+    </div>
+    
+    <% if @reservations.any? %>
+      <div class="reservations-grid">
+        <% @reservations.each do |reservation| %>
+          <div class="reservation-card">
+            <div class="card-row card-row-first">
+              <div class="card-item">
+                <div class="card-label">名前</div>
+                <div class="card-value"><%= reservation.customer_name %></div>
+              </div>
+              
+              <div class="card-item">
+                <div class="card-label">電話番号</div>
+                <div class="card-value"><%= reservation.customer_phone %></div>
+              </div>
+              
+              <div class="card-item">
+                <div class="card-label">アドレス</div>
+                <div class="card-value"><%= reservation.customer_email %></div>
+              </div>
+              
+              <div class="card-item datetime-item">
+                <div class="card-label">予約日時</div>
+                <div class="card-value">
+                  <%= reservation.start_time.strftime("%Y年%m月%d日 %H:%M") %> - <%= reservation.end_time.strftime("%H:%M") %>
+                </div>
+              </div>
+            </div>
+            
+            <% if reservation.notes.present? %>
+              <div class="card-row card-row-second">
+                <div class="card-item notes-item">
+                  <div class="card-label">備考</div>
+                  <div class="card-value"><%= simple_format(reservation.notes) %></div>
+                </div>
+              </div>
+            <% end %>
+            
+            <div class="card-actions-admin">
+              <button type="button" class="btn-delete" data-reservation-id="<%= reservation.id %>" data-customer-name="<%= reservation.customer_name %>" data-datetime="<%= reservation.start_time.strftime("%Y年%m月%d日 %H:%M") %>">削除</button>
+            </div>
+          </div>
+        <% end %>
+      </div>
+      
+      <!-- 削除確認モーダル -->
+      <div id="deleteModal" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>予約削除の確認</h2>
+            <button class="close" id="close-delete-modal">&times;</button>
+          </div>
+          <div class="modal-body">
+            <p>以下の予約を削除してもよろしいですか？</p>
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <p><strong>お名前:</strong> <span id="delete-reservation-name"></span></p>
+              <p><strong>予約日時:</strong> <span id="delete-reservation-datetime"></span></p>
+            </div>
+            <p style="color: #dc3545; font-weight: bold;">この操作は取り消せません。</p>
+            <%= form_with url: admin_reservation_path(0), method: :delete, local: true, id: "deleteForm", data: { turbo: false } do |f| %>
+              <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+              <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">キャンセル</button>
+                <%= f.submit "削除する", class: "btn btn-danger" %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+      
+      <script>
+        // 削除モーダルを開く関数
+        window.openDeleteModal = function(reservationId, customerName, datetime) {
+          const nameElement = document.getElementById('delete-reservation-name');
+          const datetimeElement = document.getElementById('delete-reservation-datetime');
+          const form = document.getElementById('deleteForm');
+          const modal = document.getElementById('deleteModal');
+          
+          if (nameElement && datetimeElement && form && modal) {
+            nameElement.textContent = customerName;
+            datetimeElement.textContent = datetime;
+            form.action = '/admin/reservations/' + reservationId;
+            
+            // CSRFトークンを確実に設定
+            const csrfToken = document.querySelector('meta[name="csrf-token"]');
+            if (csrfToken) {
+              const existingTokens = form.querySelectorAll('input[name="authenticity_token"]');
+              existingTokens.forEach(function(token) {
+                token.remove();
+              });
+              
+              const authenticityTokenInput = document.createElement('input');
+              authenticityTokenInput.type = 'hidden';
+              authenticityTokenInput.name = 'authenticity_token';
+              authenticityTokenInput.value = csrfToken.getAttribute('content');
+              form.insertBefore(authenticityTokenInput, form.firstChild);
+            }
+            
+            modal.style.display = 'block';
+          }
+        };
+        
+        window.closeDeleteModal = function() {
+          const modal = document.getElementById('deleteModal');
+          if (modal) {
+            modal.style.display = 'none';
+          }
+        };
+        
+        document.addEventListener('DOMContentLoaded', function() {
+          // 削除ボタンにイベントリスナーを追加
+          const deleteButtons = document.querySelectorAll('.btn-delete');
+          deleteButtons.forEach(function(button) {
+            button.addEventListener('click', function() {
+              const reservationId = this.getAttribute('data-reservation-id');
+              const customerName = this.getAttribute('data-customer-name');
+              const datetime = this.getAttribute('data-datetime');
+              window.openDeleteModal(reservationId, customerName, datetime);
+            });
+          });
+          
+          // 削除フォーム送信時にCSRFトークンを更新
+          const deleteForm = document.getElementById('deleteForm');
+          if (deleteForm) {
+            deleteForm.addEventListener('submit', function(e) {
+              const csrfToken = document.querySelector('meta[name="csrf-token"]');
+              if (csrfToken) {
+                const existingTokens = deleteForm.querySelectorAll('input[name="authenticity_token"]');
+                existingTokens.forEach(function(token) {
+                  token.remove();
+                });
+                
+                const authenticityTokenInput = document.createElement('input');
+                authenticityTokenInput.type = 'hidden';
+                authenticityTokenInput.name = 'authenticity_token';
+                authenticityTokenInput.value = csrfToken.getAttribute('content');
+                deleteForm.insertBefore(authenticityTokenInput, deleteForm.firstChild);
+              }
+            });
+          }
+          
+          // モーダルの閉じるボタン
+          const closeButton = document.getElementById('close-delete-modal');
+          if (closeButton) {
+            closeButton.addEventListener('click', window.closeDeleteModal);
+          }
+          
+          // モーダル外をクリックしたときに閉じる
+          window.addEventListener('click', function(event) {
+            const deleteModal = document.getElementById('deleteModal');
+            if (deleteModal && event.target === deleteModal) {
+              window.closeDeleteModal();
+            }
+          });
+        });
+      </script>
+      
+      <%= paginate @reservations %>
+    <% else %>
+      <p class="no-results">検索条件に一致する予約が見つかりませんでした。</p>
+    <% end %>
+  </div>
+</div>

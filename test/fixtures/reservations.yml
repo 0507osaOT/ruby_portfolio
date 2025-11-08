@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  start_time: 2025-10-17 01:20:21
+  end_time: 2025-10-17 01:20:21
+  customer_name: MyString
+  customer_email: MyString
+  customer_phone: MyString
+  notes: MyText
+  status: MyString
+
+two:
+  start_time: 2025-10-17 01:20:21
+  end_time: 2025-10-17 01:20:21
+  customer_name: MyString
+  customer_email: MyString
+  customer_phone: MyString
+  notes: MyText
+  status: MyString

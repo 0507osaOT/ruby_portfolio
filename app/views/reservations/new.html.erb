@@ -1,0 +1,416 @@
+<div class="header">
+  <h1>単日スケジュール - <%= @date.year %>年<%= @date.month %>月<%= @date.day %>日</h1>
+  <div class="header-buttons">
+    <% if current_user&.admin? %>
+      <span class="admin-name">管理者さん</span>
+      <%= link_to "👥 予約者リスト", list_admin_reservations_path, class: "btn" %>
+    <% else %>
+      <span class="admin-name"><%= current_user.name.presence || current_user.email %></span>
+      <%= link_to "📋 予約状況", reservations_path, class: "btn" %>
+    <% end %>
+    <%= link_to "📅 カレンダー表示", calendars_reservations_path, class: "btn" %>
+    <button class="btn btn-settings" onclick="openSettingsModal()">⚙️ 設定</button>
+  </div>
+</div>
+
+<div class="date-navigation">
+  <a href="<%= new_reservation_path(date: (@date - 1.day).strftime('%Y-%m-%d')) %>" class="btn">◀ 前日</a>
+  <a href="<%= new_reservation_path(date: Date.today.strftime('%Y-%m-%d')) %>" class="btn">今日</a>
+  <a href="<%= new_reservation_path(date: (@date + 1.day).strftime('%Y-%m-%d')) %>" class="btn">翌日 ▶</a>
+  <input type="date" id="datePicker" value="<%= @date.strftime('%Y-%m-%d') %>">
+</div>
+
+<div id="status">カレンダーを読み込んでいます...</div>
+<div id="calendar" data-date="<%= @date.strftime('%Y-%m-%d') %>"></div>
+
+<!-- 予約詳細モーダル -->
+<div id="reservationModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>予約詳細</h2>
+      <button class="close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- 予約作成モーダル -->
+<div id="createReservationModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>予約作成</h2>
+      <button class="close" onclick="closeCreateModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="createModalBody">
+      <% if @reservation && @reservation.errors.any? %>
+        <div class="error-messages" style="background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+          <h3 style="margin-top: 0;">以下のエラーが発生しました:</h3>
+          <ul style="margin: 0; padding-left: 20px;">
+            <% @reservation.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+      
+      <%= form_with model: (@reservation || Reservation.new), url: reservations_path, method: :post, local: true, id: "reservationForm" do |f| %>
+        <%= f.hidden_field :start_time, id: "reservation_start_time" %>
+        <%= f.hidden_field :end_time, id: "reservation_end_time" %>
+        <%= hidden_field_tag :date, @date.strftime('%Y-%m-%d') %>
+        <%= hidden_field_tag :return_to, 'new' %>
+        
+        <div class="form-group">
+          <label>予約日</label>
+          <p id="reservation_date_display" style="font-size: 16px; font-weight: bold; color: #007bff; padding: 10px; background-color: #e7f3ff; border-radius: 5px; margin: 0 0 15px 0;"><%= @date.year %>年<%= @date.month %>月<%= @date.day %>日</p>
+        </div>
+        
+        <div class="form-group">
+          <label>開始時間</label>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <select id="start_hour_input" class="form-control" style="width: auto; min-width: 80px;" required>
+              <% (9..17).each do |hour| %>
+                <option value="<%= hour %>" <%= 'selected' if hour == 9 %>><%= hour %>時</option>
+              <% end %>
+            </select>
+            <select id="start_minute_input" class="form-control" style="width: auto; min-width: 80px;" required>
+              <% [0, 10, 20, 30, 40, 50].each do |minute| %>
+                <option value="<%= minute %>" <%= 'selected' if minute == 0 %>><%= minute %>分</option>
+              <% end %>
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>終了時間</label>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <select id="end_hour_input" class="form-control" style="width: auto; min-width: 80px;" required>
+              <% (9..18).each do |hour| %>
+                <option value="<%= hour %>" <%= 'selected' if hour == 10 %>><%= hour %>時</option>
+              <% end %>
+            </select>
+            <select id="end_minute_input" class="form-control" style="width: auto; min-width: 80px;" required>
+              <% [0, 10, 20, 30, 40, 50].each do |minute| %>
+                <option value="<%= minute %>" <%= 'selected' if minute == 0 %>><%= minute %>分</option>
+              <% end %>
+            </select>
+          </div>
+        </div>
+        
+        <%= f.hidden_field :customer_name, value: (@reservation&.customer_name || current_user&.name || current_user&.email&.split('@')&.first || "") %>
+        <%= f.hidden_field :customer_email, value: (@reservation&.customer_email || current_user&.email || "") %>
+        <%= f.hidden_field :customer_phone, value: (@reservation&.customer_phone || "") %>
+        
+        <div class="form-group">
+          <%= f.label :notes, "備考" %>
+          <%= f.text_area :notes, rows: 3, class: "form-control", value: (@reservation&.notes || "") %>
+        </div>
+        
+        <div class="form-actions">
+          <%= f.submit "予約を確定", class: "btn btn-primary" %>
+          <button type="button" class="btn btn-secondary" onclick="closeCreateModal()">キャンセル</button>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<!-- 設定モーダル -->
+<div id="settingsModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>設定</h2>
+      <button class="close" onclick="closeSettingsModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-content">
+        <% if current_user&.admin? %>
+          <%= link_to "情報変更", edit_admin_registration_path, class: "btn btn-edit" %>
+        <% else %>
+          <%= link_to "情報変更", edit_user_registration_path, class: "btn btn-edit" %>
+        <% end %>
+        <p>現在ログイン中です</p>
+        <%= button_to "ログアウト", destroy_user_session_path, method: :delete, class: "btn btn-logout", form: { data: { turbo: false } } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%= javascript_include_tag "index-schedule", "data-turbo-track": "reload", defer: true %>
+
+<script>
+  <%= File.read(Rails.root.join('app/javascript/index-schedule.js')).html_safe %>
+  
+  // 一般ユーザー用の予約作成機能を追加
+  <% unless current_user&.admin? %>
+  (function() {
+    // 元のhandleSlotSelectionを保存
+    const originalHandleSlotSelection = window.handleSlotSelection;
+    
+    // 新しいhandleSlotSelectionを定義
+    window.handleSlotSelection = function(info, calendar) {
+      const start = new Date(info.startStr);
+      const end = new Date(info.endStr);
+      
+      // 空き枠を確認
+      const dateStr = start.toISOString().split('T')[0];
+      const url = '/reservations/available_slots?date=' + dateStr;
+      
+      fetch(url)
+        .then(function(response) {
+          if (!response.ok) throw new Error('HTTP ' + response.status);
+          return response.json();
+        })
+        .then(function(slots) {
+          const selectedSlot = slots.find(function(slot) {
+            return slot.start === start.toISOString() && slot.end === end.toISOString();
+          });
+          
+          if (selectedSlot && selectedSlot.available && selectedSlot.available_count > 0) {
+            openReservationForm(start, end);
+          } else {
+            alert('この時間帯は既に満員です。別の時間帯を選択してください。');
+          }
+          calendar.unselect();
+        })
+        .catch(function(error) {
+          console.error('Error checking available slots:', error);
+          alert('空き枠の確認に失敗しました。');
+          calendar.unselect();
+        });
+    };
+    
+    function openReservationForm(start, end) {
+      const startTimeInput = document.getElementById('reservation_start_time');
+      const endTimeInput = document.getElementById('reservation_end_time');
+      const startHourPicker = document.getElementById('start_hour_input');
+      const startMinutePicker = document.getElementById('start_minute_input');
+      const endHourPicker = document.getElementById('end_hour_input');
+      const endMinutePicker = document.getElementById('end_minute_input');
+      const dateDisplay = document.getElementById('reservation_date_display');
+      
+      if (startTimeInput && endTimeInput && startHourPicker && startMinutePicker && endHourPicker && endMinutePicker && dateDisplay) {
+        // hiddenフィールドにISO形式で設定
+        startTimeInput.value = start.toISOString();
+        endTimeInput.value = end.toISOString();
+        
+        // 時間ピッカーに値を設定（10分刻みに丸める）
+        const startHour = start.getHours();
+        const startMinute = Math.round(start.getMinutes() / 10) * 10;
+        const endHour = end.getHours();
+        const endMinute = Math.round(end.getMinutes() / 10) * 10;
+        
+        // select要素に値を設定
+        if (startHourPicker.querySelector(`option[value="${startHour}"]`)) {
+          startHourPicker.value = String(startHour);
+        }
+        if (startMinutePicker.querySelector(`option[value="${startMinute}"]`)) {
+          startMinutePicker.value = String(startMinute);
+        }
+        if (endHourPicker.querySelector(`option[value="${endHour}"]`)) {
+          endHourPicker.value = String(endHour);
+        }
+        if (endMinutePicker.querySelector(`option[value="${endMinute}"]`)) {
+          endMinutePicker.value = String(endMinute);
+        }
+        
+        // 日付表示を更新（既に表示されている場合はそのまま）
+        if (!dateDisplay.textContent) {
+          const year = start.getFullYear();
+          const month = String(start.getMonth() + 1).padStart(2, '0');
+          const day = String(start.getDate()).padStart(2, '0');
+          dateDisplay.textContent = year + '年' + month + '月' + day + '日';
+        }
+        
+        document.getElementById('createReservationModal').style.display = 'block';
+      }
+    }
+    
+    // 時間ピッカーの変更時にhiddenフィールドを更新
+    function updateHiddenTimeFields() {
+      const startHourPicker = document.getElementById('start_hour_input');
+      const startMinutePicker = document.getElementById('start_minute_input');
+      const endHourPicker = document.getElementById('end_hour_input');
+      const endMinutePicker = document.getElementById('end_minute_input');
+      const startTimeInput = document.getElementById('reservation_start_time');
+      const endTimeInput = document.getElementById('reservation_end_time');
+      const dateDisplay = document.getElementById('reservation_date_display');
+      
+      if (!startHourPicker || !startMinutePicker || !endHourPicker || !endMinutePicker || !startTimeInput || !endTimeInput) {
+        console.error('必要な要素が見つかりません');
+        return;
+      }
+      
+      // 日付を取得（dateDisplayから、または現在の日付）
+      let year, month, day;
+      
+      if (dateDisplay && dateDisplay.textContent) {
+        const dateText = dateDisplay.textContent;
+        const dateMatch = dateText.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
+        
+        if (dateMatch) {
+          year = parseInt(dateMatch[1]);
+          month = parseInt(dateMatch[2]) - 1; // 月は0から始まる
+          day = parseInt(dateMatch[3]);
+        }
+      }
+      
+      // dateDisplayから取得できない場合は、現在の日付を使用
+      if (!year || !month || !day) {
+        const now = new Date();
+        year = now.getFullYear();
+        month = now.getMonth();
+        day = now.getDate();
+        console.warn('日付表示から日付を取得できなかったため、現在の日付を使用します');
+      }
+      
+      // 時間と分を取得
+      const startHour = parseInt(startHourPicker.value) || 9;
+      const startMinute = parseInt(startMinutePicker.value) || 0;
+      const endHour = parseInt(endHourPicker.value) || 10;
+      const endMinute = parseInt(endMinutePicker.value) || 0;
+      
+      // Dateオブジェクトを作成
+      const startTime = new Date(year, month, day, startHour, startMinute, 0);
+      const endTime = new Date(year, month, day, endHour, endMinute, 0);
+      
+      // hiddenフィールドにISO形式で設定
+      startTimeInput.value = startTime.toISOString();
+      endTimeInput.value = endTime.toISOString();
+      
+      console.log('Hidden fields updated:', {
+        start_time: startTimeInput.value,
+        end_time: endTimeInput.value
+      });
+    }
+    
+    window.closeCreateModal = function() {
+      document.getElementById('createReservationModal').style.display = 'none';
+    };
+    
+    // エラーがある場合はモーダルを開く
+    document.addEventListener('DOMContentLoaded', function() {
+      const errorMessages = document.querySelector('.error-messages');
+      if (errorMessages) {
+        document.getElementById('createReservationModal').style.display = 'block';
+      }
+      
+      // 時間ピッカーにイベントリスナーを追加
+      const startHourPicker = document.getElementById('start_hour_input');
+      const startMinutePicker = document.getElementById('start_minute_input');
+      const endHourPicker = document.getElementById('end_hour_input');
+      const endMinutePicker = document.getElementById('end_minute_input');
+      
+      // 時間選択時にhiddenフィールドを更新
+      if (startHourPicker) {
+        startHourPicker.addEventListener('change', updateHiddenTimeFields);
+      }
+      if (startMinutePicker) {
+        startMinutePicker.addEventListener('change', updateHiddenTimeFields);
+      }
+      if (endHourPicker) {
+        endHourPicker.addEventListener('change', updateHiddenTimeFields);
+      }
+      if (endMinutePicker) {
+        endMinutePicker.addEventListener('change', updateHiddenTimeFields);
+      }
+      
+      // フォーム送信前に最終確認
+      const form = document.getElementById('reservationForm');
+      if (form) {
+        form.addEventListener('submit', function(e) {
+          // hiddenフィールドを確実に更新
+          updateHiddenTimeFields();
+          
+          // hiddenフィールドが正しく設定されているか確認
+          const startTimeInput = document.getElementById('reservation_start_time');
+          const endTimeInput = document.getElementById('reservation_end_time');
+          
+          if (!startTimeInput || !startTimeInput.value) {
+            e.preventDefault();
+            alert('開始時間が設定されていません。');
+            return false;
+          }
+          
+          if (!endTimeInput || !endTimeInput.value) {
+            e.preventDefault();
+            alert('終了時間が設定されていません。');
+            return false;
+          }
+          
+          // バリデーション: 終了時間が開始時間より後であることを確認
+          const startHourPicker = document.getElementById('start_hour_input');
+          const startMinutePicker = document.getElementById('start_minute_input');
+          const endHourPicker = document.getElementById('end_hour_input');
+          const endMinutePicker = document.getElementById('end_minute_input');
+          
+          if (startHourPicker && startMinutePicker && endHourPicker && endMinutePicker) {
+            const startHour = parseInt(startHourPicker.value);
+            const startMinute = parseInt(startMinutePicker.value);
+            const endHour = parseInt(endHourPicker.value);
+            const endMinute = parseInt(endMinutePicker.value);
+            
+            const startTotal = startHour * 60 + startMinute;
+            const endTotal = endHour * 60 + endMinute;
+            
+            if (startTotal >= endTotal) {
+              e.preventDefault();
+              alert('終了時間は開始時間より後である必要があります。');
+              return false;
+            }
+          }
+        });
+      }
+    });
+  })();
+  <% end %>
+</script>
+
+<style>
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #333;
+}
+
+.form-control {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.btn-primary {
+  background-color: #28a745;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+}
+
+.btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+#reservation_date_display {
+  font-size: 16px;
+  font-weight: bold;
+  color: #007bff;
+  padding: 10px;
+  background-color: #e7f3ff;
+  border-radius: 5px;
+}
+</style>
