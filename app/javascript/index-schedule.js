@@ -83,7 +83,7 @@
       timeZone: 'Asia/Tokyo',
       
       headerToolbar: {
-        left: 'prev,next today',
+        left: '',
         center: 'title',
         right: ''
       },
@@ -123,6 +123,16 @@
       },
       
       select: function(info) {
+        // 過去の時間スロットを選択できないようにする
+        const now = new Date();
+        const selectedStart = new Date(info.startStr);
+        
+        if (selectedStart < now) {
+          alert('過去の時間は予約できません');
+          calendar.unselect();
+          return;
+        }
+        
         handleSlotSelection(info, calendar);
       },
       
@@ -131,6 +141,26 @@
       },
       
       eventClick: function(info) {
+        // 一般ユーザーの場合、他のユーザーの予約はクリックできないようにする
+        const props = info.event.extendedProps;
+        const isOtherUser = props && (
+          props.is_other_user === true || 
+          props.is_other_user === 'true'
+        );
+        const eventUserId = props ? props.user_id : null;
+        const currentUserIdNum = window.currentUserId ? parseInt(window.currentUserId) : null;
+        const eventUserIdNum = eventUserId ? parseInt(eventUserId) : null;
+        const isMyReservation = currentUserIdNum && eventUserIdNum && eventUserIdNum === currentUserIdNum;
+        
+        // 管理者の場合は全ての予約を見れる
+        const isAdmin = window.currentUserIsAdmin === true;
+        
+        // 一般ユーザーで他のユーザーの予約の場合は、モーダルを表示しない
+        if (!isAdmin && (isOtherUser || !isMyReservation)) {
+          console.log('他のユーザーの予約のため、詳細を表示しません');
+          return;
+        }
+        
         showEventDetails(info.event);
       },
       
@@ -138,9 +168,51 @@
         handleDateChange(calendar, dateStr);
       },
       
+      // 過去の時間を選択できないようにする
+      selectConstraint: function(info) {
+        const now = new Date();
+        const start = new Date(info.startStr);
+        return start >= now;
+      },
+      
+      // 過去の時間スロットをグレースケール化
+      slotLabelDidMount: function(info) {
+        const slotTime = new Date(info.date);
+        const now = new Date();
+        
+        if (slotTime < now) {
+          // ラベルをグレースケール化
+          info.el.style.filter = 'grayscale(100%)';
+          info.el.style.opacity = '0.5';
+          
+          // 対応するスロット全体もグレースケール化
+          const slotLane = info.el.closest('.fc-timegrid-slot-lane');
+          if (slotLane) {
+            slotLane.style.filter = 'grayscale(100%)';
+            slotLane.style.opacity = '0.5';
+            slotLane.style.pointerEvents = 'none';
+            slotLane.style.cursor = 'not-allowed';
+          }
+          
+          // スロットセルもグレースケール化
+          const slot = info.el.closest('.fc-timegrid-slot');
+          if (slot) {
+            slot.style.filter = 'grayscale(100%)';
+            slot.style.opacity = '0.5';
+            slot.style.pointerEvents = 'none';
+            slot.style.cursor = 'not-allowed';
+          }
+        }
+      },
+      
       eventDidMount: function(info) {
         const slotIndex = info.event.extendedProps ? (info.event.extendedProps.slot_index || 0) : 0;
         info.el.parentElement.setAttribute('data-slot', slotIndex);
+        
+        // 過去の予約かどうかをチェック（過去の予約も通常通り表示）
+        const eventStart = new Date(info.event.start);
+        const now = new Date();
+        const isPastEvent = eventStart < now;
         
         // 他のユーザーの予約かどうかを確認
         const isOtherUser = info.event.extendedProps && (
@@ -148,11 +220,18 @@
           info.event.extendedProps.is_other_user === 'true'
         );
         
+        // 自身の予約かどうかを確認
+        const eventUserId = info.event.extendedProps ? info.event.extendedProps.user_id : null;
+        const isMyReservation = window.currentUserId && eventUserId && eventUserId === window.currentUserId;
+        
         // デバッグ用ログ（すべてのイベントで出力）
         console.log('eventDidMount 呼び出し:', {
           title: info.event.title,
           is_other_user: info.event.extendedProps ? info.event.extendedProps.is_other_user : 'undefined',
-          user_id: info.event.extendedProps ? info.event.extendedProps.user_id : 'undefined',
+          user_id: eventUserId,
+          current_user_id: window.currentUserId,
+          is_my_reservation: isMyReservation,
+          is_past_event: isPastEvent,
           extendedProps: info.event.extendedProps
         });
         
@@ -163,6 +242,11 @@
           bgColor = '#e0e0e0';
           textColor = '#666666';
           console.log('他のユーザーの予約として処理:', info.event.title);
+        } else if (isMyReservation) {
+          // 自身の予約はオレンジ色
+          bgColor = '#ff9800'; // オレンジ
+          textColor = '#ffffff';
+          console.log('自身の予約として処理（オレンジ）:', info.event.title);
         } else {
           // 自分の予約はユーザーごとの色（より目立たせる）
           const userId = info.event.extendedProps ? info.event.extendedProps.user_id : null;
@@ -171,8 +255,13 @@
           textColor = getContrastTextColor(color.bg);
         }
         
+        // 過去の予約の場合は少し透明度を下げる（グレースケールは適用しない）
+        if (isPastEvent) {
+          info.el.style.opacity = '0.8';
+        }
+        
         // 時間スロット全体の背景色を設定（先に実行）
-        if (isOtherUser) {
+        if (isOtherUser || isMyReservation) {
           const startTime = info.event.start;
           const endTime = info.event.end;
           
@@ -196,7 +285,13 @@
                 
                 // イベントの時間範囲内かチェック
                 if (slotDateTime >= startTime && slotDateTime < endTime) {
-                  slot.style.setProperty('background-color', '#e0e0e0', 'important');
+                  if (isMyReservation) {
+                    // 自身の予約の場合はオレンジ色
+                    slot.style.setProperty('background-color', '#ff9800', 'important');
+                  } else {
+                    // 他のユーザーの予約の場合は薄いグレー
+                    slot.style.setProperty('background-color', '#e0e0e0', 'important');
+                  }
                 }
               }
             }
@@ -349,16 +444,59 @@
    * イベント詳細表示
    */
   function showEventDetails(event) {
+    // 一般ユーザーの場合、他のユーザーの予約は表示しない（念のため二重チェック）
     const props = event.extendedProps;
+    const isOtherUser = props && (
+      props.is_other_user === true || 
+      props.is_other_user === 'true'
+    );
+    const eventUserId = props ? props.user_id : null;
+    const currentUserIdNum = window.currentUserId ? parseInt(window.currentUserId) : null;
+    const eventUserIdNum = eventUserId ? parseInt(eventUserId) : null;
+    const isMyReservation = currentUserIdNum && eventUserIdNum && eventUserIdNum === currentUserIdNum;
+    
+    // 管理者の場合は全ての予約を見れる
+    const isAdmin = window.currentUserIsAdmin === true;
+    
+    // 一般ユーザーで他のユーザーの予約の場合は、モーダルを表示しない
+    if (!isAdmin && (isOtherUser || !isMyReservation)) {
+      console.log('他のユーザーの予約のため、詳細を表示しません');
+      return;
+    }
+    
     const statusLabels = {
       'confirmed': '確定',
       'pending': '保留中',
       'cancelled': 'キャンセル'
     };
     
+    // FullCalendarのイベントオブジェクトから日時を取得
+    // timeZone: 'Asia/Tokyo'が設定されているので、既にJSTに変換されている
+    // toLocaleStringにtimeZoneを指定すると二重変換になるため、指定しない
+    const startDate = event.start;
+    const endDate = event.end;
+    
+    // 年、月、日、時、分を個別に取得してフォーマット（秒は表示しない）
+    const startYear = startDate.getFullYear();
+    const startMonth = String(startDate.getMonth() + 1).padStart(2, '0');
+    const startDay = String(startDate.getDate()).padStart(2, '0');
+    const startHour = String(startDate.getHours()).padStart(2, '0');
+    const startMinute = String(startDate.getMinutes()).padStart(2, '0');
+    const startTime = `${startYear}/${startMonth}/${startDay} ${startHour}:${startMinute}`;
+    
+    let endTime = '';
+    if (endDate) {
+      const endYear = endDate.getFullYear();
+      const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
+      const endDay = String(endDate.getDate()).padStart(2, '0');
+      const endHour = String(endDate.getHours()).padStart(2, '0');
+      const endMinute = String(endDate.getMinutes()).padStart(2, '0');
+      endTime = `${endYear}/${endMonth}/${endDay} ${endHour}:${endMinute}`;
+    }
+    
     let html = '<p><strong>お客様名:</strong> ' + escapeHtml(event.title) + '</p>' +
-               '<p><strong>開始:</strong> ' + event.start.toLocaleString('ja-JP') + '</p>' +
-               '<p><strong>終了:</strong> ' + event.end.toLocaleString('ja-JP') + '</p>' +
+               '<p><strong>開始:</strong> ' + startTime + '</p>' +
+               '<p><strong>終了:</strong> ' + endTime + '</p>' +
                '<p><strong>メール:</strong> ' + (props.email ? escapeHtml(props.email) : 'なし') + '</p>' +
                '<p><strong>電話:</strong> ' + (props.phone ? escapeHtml(props.phone) : 'なし') + '</p>' +
                '<p><strong>ステータス:</strong> <span class="badge ' + props.status + '">' + 

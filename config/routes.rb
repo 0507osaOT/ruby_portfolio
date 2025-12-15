@@ -5,8 +5,14 @@ Rails.application.routes.draw do
     sessions: 'users/sessions'
   }
   
-  # 管理者用Devise（登録は無効化）
-  devise_for :admins, skip: [:registrations]
+  # 管理者用Devise（登録は無効化、編集は有効）
+  devise_for :admins, skip: [:registrations], controllers: {
+    registrations: 'admins/registrations'
+  }
+  
+  # ヘルスチェック用ルート（例外なくアプリが起動していれば200を返し、そうでなければ500を返す）
+  # ロードバランサーや稼働監視ツールでアプリの稼働状況を確認するために使用可能
+  get "up" => "rails/health#show", as: :rails_health_check
   
   # 管理者用ルート
   namespace :admin do

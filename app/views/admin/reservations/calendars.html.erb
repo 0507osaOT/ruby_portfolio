@@ -124,9 +124,53 @@
           }
         },
         
+        
+        eventClick: function(info) {
+          console.log('Event clicked');
+          showReservationDetails(info.event);
+        },
+        
+        dateClick: function(info) {
+          console.log('Date clicked: ' + info.dateStr);
+        },
+        
+        // 過去の日付をグレースケール化（イベントは通常表示）
+        dayCellDidMount: function(info) {
+          // 過去の日付をチェック
+          const cellDate = new Date(info.date);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          cellDate.setHours(0, 0, 0, 0);
+          
+          const isPastDate = cellDate < today;
+          
+          // 過去の日付のセル背景をグレースケール化（イベントは通常表示）
+          if (isPastDate) {
+            // セルの背景色をグレースケール化（イベントには影響しない）
+            const dayNumber = info.el.querySelector('.fc-daygrid-day-number');
+            if (dayNumber) {
+              dayNumber.style.filter = 'grayscale(100%)';
+              dayNumber.style.opacity = '0.6';
+            }
+            // セル全体の背景を少し薄くする（イベントは通常表示）
+            info.el.style.backgroundColor = 'rgba(0, 0, 0, 0.02)';
+            info.el.title = '過去の日付';
+          }
+        },
+        
         eventDidMount: function(info) {
+          // 過去の予約も通常通り表示（グレースケール化しない）
+          const eventStart = new Date(info.event.start);
+          const now = new Date();
+          const isPastEvent = eventStart < now;
+          
           const userId = info.event.extendedProps.user_id;
           const color = getUserColor(userId);
+          
+          // 過去の予約の場合は少し透明度を下げる（グレースケールは適用しない）
+          if (isPastEvent) {
+            info.el.style.opacity = '0.8';
+          }
           
           // 背景色とテキスト色を設定
           info.el.style.backgroundColor = color.bg;
@@ -144,15 +188,6 @@
             titleEl.style.fontSize = '13px';
             titleEl.style.textShadow = '0 1px 2px rgba(0,0,0,0.3)';
           }
-        },
-        
-        eventClick: function(info) {
-          console.log('Event clicked');
-          showReservationDetails(info.event);
-        },
-        
-        dateClick: function(info) {
-          console.log('Date clicked: ' + info.dateStr);
         }
       });
       
@@ -245,18 +280,27 @@
       const props = event.extendedProps;
       const statusBadge = getStatusBadge(props.status);
       
-      const startTime = event.start.toLocaleString('ja-JP', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+      // FullCalendarのイベントオブジェクトから日時を取得
+      const startDate = event.start;
+      const endDate = event.end;
       
-      const endTime = event.end ? event.end.toLocaleString('ja-JP', {
-        hour: '2-digit',
-        minute: '2-digit'
-      }) : '';
+      // 年、月、日、時、分を個別に取得してフォーマット（秒は表示しない）
+      const startYear = startDate.getFullYear();
+      const startMonth = String(startDate.getMonth() + 1).padStart(2, '0');
+      const startDay = String(startDate.getDate()).padStart(2, '0');
+      const startHour = String(startDate.getHours()).padStart(2, '0');
+      const startMinute = String(startDate.getMinutes()).padStart(2, '0');
+      const startTime = `${startYear}/${startMonth}/${startDay} ${startHour}:${startMinute}`;
+      
+      let endTime = '';
+      if (endDate) {
+        const endYear = endDate.getFullYear();
+        const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
+        const endDay = String(endDate.getDate()).padStart(2, '0');
+        const endHour = String(endDate.getHours()).padStart(2, '0');
+        const endMinute = String(endDate.getMinutes()).padStart(2, '0');
+        endTime = `${endYear}/${endMonth}/${endDay} ${endHour}:${endMinute}`;
+      }
       
       let html = '<p><strong>お客様名:</strong> ' + (props.customer || 'N/A') + '</p>';
       html += '<p><strong>電話番号:</strong> ' + (props.phone || 'N/A') + '</p>';
@@ -276,9 +320,6 @@
       if (props.notes) {
         html += '<p><strong>備考:</strong> ' + props.notes + '</p>';
       }
-      
-      html += '<hr>';
-      html += '<a href="' + window.reservationsPath + '/' + event.id + '" class="btn">詳細を見る</a>';
       
       modalBody.innerHTML = html;
       modal.style.display = 'block';

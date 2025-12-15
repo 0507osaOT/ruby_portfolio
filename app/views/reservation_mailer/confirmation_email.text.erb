@@ -1,0 +1,23 @@
+<%= @user.name %> 様
+
+ご予約ありがとうございます。以下の内容でご予約を承りました。
+
+予約詳細
+----------------------------------------
+予約番号: <%= @reservation.id %>
+予約日時: <%= @reservation.start_time.strftime('%Y年%m月%d日 %H:%M') %>
+終了時刻: <%= @reservation.end_time.strftime('%H:%M') %>
+お名前: <%= @user.name %>
+電話番号: <%= @user.phone_number %>
+メールアドレス: <%= @user.email %>
+<% if @reservation.notes.present? %>
+備考: <%= @reservation.notes %>
+<% end %>
+
+当日お待ちしております。
+
+※このメールは送信専用です。
+
+予約管理システム
+お問い合わせ: support@yourapp.com
+

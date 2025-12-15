@@ -20,6 +20,8 @@
   <script>
     window.calendarEventsUrl = '<%= calendar_events_reservations_path %>';
     window.reservationsPath = '<%= new_reservation_path %>';
+    window.currentUserId = <%= current_user&.id || 'null' %>;
+    window.currentUserIsAdmin = <%= (current_user&.admin? ? 'true' : 'false') %>;
   </script>
 </head>
 <body>
@@ -230,15 +232,41 @@
         },
         
         eventDidMount: function(info) {
+          // 過去の予約かどうかをチェック（過去の予約も通常通り表示）
+          const eventStart = new Date(info.event.start);
+          const now = new Date();
+          const isPastEvent = eventStart < now;
+          
           // 他のユーザーの予約かどうかを確認
           const isOtherUser = info.event.extendedProps.is_other_user === true;
+          const eventUserId = info.event.extendedProps.user_id;
+          // user_idの型を統一（数値として比較）
+          const currentUserIdNum = window.currentUserId ? parseInt(window.currentUserId) : null;
+          const eventUserIdNum = eventUserId ? parseInt(eventUserId) : null;
+          const isMyReservation = currentUserIdNum && eventUserIdNum && eventUserIdNum === currentUserIdNum;
+          
+          // デバッグログ
+          console.log('eventDidMount:', {
+            title: info.event.title,
+            currentUserId: window.currentUserId,
+            eventUserId: eventUserId,
+            currentUserIdNum: currentUserIdNum,
+            eventUserIdNum: eventUserIdNum,
+            isMyReservation: isMyReservation,
+            isOtherUser: isOtherUser,
+            isPastEvent: isPastEvent
+          });
           
           let bgColor, textColor;
           
           if (isOtherUser) {
-            // 他のユーザーの予約は薄いグレー
-            bgColor = '#e0e0e0';
-            textColor = '#666666';
+            // 他のユーザーの予約は緑（目立たない色）
+            bgColor = '#2ecc71'; // 緑
+            textColor = '#ffffff';
+          } else if (isMyReservation) {
+            // 自身の予約はオレンジ色（文字は白）
+            bgColor = '#ff9800'; // オレンジ
+            textColor = '#ffffff';
           } else {
             // 自分の予約はユーザーごとの色（より目立たせる）
             const userId = info.event.extendedProps.user_id;
@@ -247,21 +275,31 @@
             textColor = getContrastTextColor(color.bg);
           }
           
-          // 背景色とテキスト色を設定
-          info.el.style.backgroundColor = bgColor;
-          info.el.style.borderColor = isOtherUser ? '#d0d0d0' : bgColor;
-          info.el.style.color = textColor;
+          // 過去の予約の場合は少し透明度を下げる（グレースケールは適用しない）
+          if (isPastEvent) {
+            info.el.style.opacity = '0.8';
+          }
+          
+          // classNameからstatusクラスを削除してCSSの干渉を防ぐ（先に実行）
+          if (isMyReservation || isOtherUser) {
+            info.el.classList.remove('status-confirmed', 'status-pending', 'status-cancelled');
+          }
+          
+          // 背景色とテキスト色を設定（!importantで強制適用）
+          info.el.style.setProperty('background-color', bgColor, 'important');
+          info.el.style.setProperty('border-color', bgColor, 'important');
+          info.el.style.setProperty('color', textColor, 'important');
           info.el.style.fontWeight = 'bold';
           
           // 自身の予約をより目立たせる（ボーダーを太く、影を追加）
-          if (!isOtherUser) {
+          if (isMyReservation) {
             info.el.style.borderWidth = '2px';
             info.el.style.borderStyle = 'solid';
             info.el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
           } else {
             info.el.style.borderWidth = '1px';
             info.el.style.borderStyle = 'solid';
-            info.el.style.boxShadow = 'none';
+            info.el.style.boxShadow = isOtherUser ? 'none' : '0 2px 4px rgba(0,0,0,0.2)';
           }
           info.el.style.padding = '4px 6px';
           info.el.style.borderRadius = '4px';
@@ -285,6 +323,24 @@
         
         eventClick: function(info) {
           console.log('Event clicked');
+          
+          // 一般ユーザーの場合、他のユーザーの予約はクリックできないようにする
+          const props = info.event.extendedProps;
+          const isOtherUser = props.is_other_user === true;
+          const eventUserId = props.user_id;
+          const currentUserIdNum = window.currentUserId ? parseInt(window.currentUserId) : null;
+          const eventUserIdNum = eventUserId ? parseInt(eventUserId) : null;
+          const isMyReservation = currentUserIdNum && eventUserIdNum && eventUserIdNum === currentUserIdNum;
+          
+          // 管理者の場合は全ての予約を見れる
+          const isAdmin = window.currentUserIsAdmin === true;
+          
+          // 一般ユーザーで他のユーザーの予約の場合は、モーダルを表示しない
+          if (!isAdmin && (isOtherUser || !isMyReservation)) {
+            console.log('他のユーザーの予約のため、詳細を表示しません');
+            return;
+          }
+          
           showReservationDetails(info.event);
         },
         
@@ -294,8 +350,36 @@
         
         // 日付ダブルクリックで予約フォームを開く
         dayCellDidMount: function(info) {
+          // 過去の日付をチェック
+          const cellDate = new Date(info.date);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          cellDate.setHours(0, 0, 0, 0);
+          
+          const isPastDate = cellDate < today;
+          
+          // 過去の日付のセル背景をグレースケール化（イベントは通常表示）
+          if (isPastDate) {
+            // セルの背景色をグレースケール化（イベントには影響しない）
+            const dayNumber = info.el.querySelector('.fc-daygrid-day-number');
+            if (dayNumber) {
+              dayNumber.style.filter = 'grayscale(100%)';
+              dayNumber.style.opacity = '0.6';
+            }
+            // セル全体の背景を少し薄くする（イベントは通常表示）
+            info.el.style.backgroundColor = 'rgba(0, 0, 0, 0.02)';
+            info.el.style.cursor = 'not-allowed';
+            info.el.title = '過去の日付は予約できません';
+          }
+          
           let clickTimer = null;
           info.el.addEventListener('click', function(e) {
+            if (isPastDate) {
+              e.preventDefault();
+              e.stopPropagation();
+              return false;
+            }
+            
             if (clickTimer === null) {
               clickTimer = setTimeout(function() {
                 clickTimer = null;
@@ -307,6 +391,17 @@
           info.el.addEventListener('dblclick', function(e) {
             e.preventDefault();
             e.stopPropagation();
+            
+            // 過去の日付の場合は予約フォームを開かない
+            if (isPastDate) {
+              alert('過去の日付は予約できません');
+              if (clickTimer) {
+                clearTimeout(clickTimer);
+                clickTimer = null;
+              }
+              return false;
+            }
+            
             if (clickTimer) {
               clearTimeout(clickTimer);
               clickTimer = null;
@@ -484,21 +579,46 @@
       
       if (!modal || !modalBody) return;
       
+      // 一般ユーザーの場合、他のユーザーの予約は表示しない（念のため二重チェック）
       const props = event.extendedProps;
+      const isOtherUser = props.is_other_user === true;
+      const eventUserId = props.user_id;
+      const currentUserIdNum = window.currentUserId ? parseInt(window.currentUserId) : null;
+      const eventUserIdNum = eventUserId ? parseInt(eventUserId) : null;
+      const isMyReservation = currentUserIdNum && eventUserIdNum && eventUserIdNum === currentUserIdNum;
+      
+      // 管理者の場合は全ての予約を見れる
+      const isAdmin = window.currentUserIsAdmin === true;
+      
+      // 一般ユーザーで他のユーザーの予約の場合は、モーダルを表示しない
+      if (!isAdmin && (isOtherUser || !isMyReservation)) {
+        console.log('他のユーザーの予約のため、詳細を表示しません');
+        return;
+      }
+      
       const statusBadge = getStatusBadge(props.status);
       
-      const startTime = event.start.toLocaleString('ja-JP', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+      // FullCalendarのイベントオブジェクトから日時を取得
+      const startDate = event.start;
+      const endDate = event.end;
       
-      const endTime = event.end ? event.end.toLocaleString('ja-JP', {
-        hour: '2-digit',
-        minute: '2-digit'
-      }) : '';
+      // 年、月、日、時、分を個別に取得してフォーマット（秒は表示しない）
+      const startYear = startDate.getFullYear();
+      const startMonth = String(startDate.getMonth() + 1).padStart(2, '0');
+      const startDay = String(startDate.getDate()).padStart(2, '0');
+      const startHour = String(startDate.getHours()).padStart(2, '0');
+      const startMinute = String(startDate.getMinutes()).padStart(2, '0');
+      const startTime = `${startYear}/${startMonth}/${startDay} ${startHour}:${startMinute}`;
+      
+      let endTime = '';
+      if (endDate) {
+        const endYear = endDate.getFullYear();
+        const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
+        const endDay = String(endDate.getDate()).padStart(2, '0');
+        const endHour = String(endDate.getHours()).padStart(2, '0');
+        const endMinute = String(endDate.getMinutes()).padStart(2, '0');
+        endTime = `${endYear}/${endMonth}/${endDay} ${endHour}:${endMinute}`;
+      }
       
       let html = '<p><strong>お客様名:</strong> ' + (props.customer || 'N/A') + '</p>';
       html += '<p><strong>電話番号:</strong> ' + (props.phone || 'N/A') + '</p>';
@@ -540,15 +660,57 @@
     }
     
     function openReservationForm(date) {
-      // 選択された日付の9:00-10:00をデフォルトに設定
+      // 過去の日付チェック
       const selectedDate = new Date(date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      selectedDate.setHours(0, 0, 0, 0);
+      
+      if (selectedDate < today) {
+        alert('過去の日付は予約できません');
+        return;
+      }
+      
+      // 選択された日付の9:00-10:00をデフォルトに設定
       const year = selectedDate.getFullYear();
       const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
       const day = String(selectedDate.getDate()).padStart(2, '0');
       
-      // デフォルト時間: 9:00-10:00
-      const startTime = new Date(year, selectedDate.getMonth(), selectedDate.getDate(), 9, 0, 0);
-      const endTime = new Date(year, selectedDate.getMonth(), selectedDate.getDate(), 10, 0, 0);
+      // デフォルト時間: 今日の場合は現在時刻以降、明日以降は9:00-10:00
+      const now = new Date();
+      let defaultStartHour = 9;
+      let defaultStartMinute = 0;
+      let defaultEndHour = 10;
+      let defaultEndMinute = 0;
+      
+      // 今日の場合は現在時刻以降の最初の10分刻みを設定
+      if (selectedDate.getTime() === today.getTime()) {
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+        
+        // 次の10分刻みを計算
+        let nextMinute = Math.ceil(currentMinute / 10) * 10;
+        if (nextMinute >= 60) {
+          nextMinute = 0;
+          defaultStartHour = currentHour + 1;
+        } else {
+          defaultStartHour = currentHour;
+        }
+        defaultStartMinute = nextMinute;
+        
+        // 終了時間は開始時間の1時間後
+        defaultEndHour = defaultStartHour + 1;
+        defaultEndMinute = defaultStartMinute;
+        
+        // 営業時間外の場合は翌日の9:00-10:00に設定
+        if (defaultStartHour >= 18 || (defaultStartHour === 17 && defaultStartMinute > 0)) {
+          alert('本日の営業時間（9:00-18:00）を過ぎています。明日以降の日付を選択してください。');
+          return;
+        }
+      }
+      
+      const startTime = new Date(year, selectedDate.getMonth(), selectedDate.getDate(), defaultStartHour, defaultStartMinute, 0);
+      const endTime = new Date(year, selectedDate.getMonth(), selectedDate.getDate(), defaultEndHour, defaultEndMinute, 0);
       
       const startTimeInput = document.getElementById('reservation_start_time');
       const endTimeInput = document.getElementById('reservation_end_time');
@@ -563,10 +725,46 @@
         dateDisplay.textContent = year + '年' + month + '月' + day + '日';
         
         // 時間ピッカーにデフォルト値を設定
-        startHourPicker.value = '9';
-        startMinutePicker.value = '0';
-        endHourPicker.value = '10';
-        endMinutePicker.value = '0';
+        startHourPicker.value = String(defaultStartHour);
+        startMinutePicker.value = String(defaultStartMinute);
+        endHourPicker.value = String(defaultEndHour);
+        endMinutePicker.value = String(defaultEndMinute);
+        
+        // 過去の時間を選択できないようにする
+        const now = new Date();
+        const isToday = selectedDate.getTime() === today.getTime();
+        
+        if (isToday) {
+          // 今日の場合は過去の時間を無効化
+          Array.from(startHourPicker.options).forEach(function(option) {
+            const hour = parseInt(option.value);
+            if (hour < now.getHours()) {
+              option.disabled = true;
+            } else if (hour === now.getHours()) {
+              // 現在時刻と同じ時間の場合、過去の分を無効化
+              Array.from(startMinutePicker.options).forEach(function(minOption) {
+                const minute = parseInt(minOption.value);
+                if (minute < Math.ceil(now.getMinutes() / 10) * 10) {
+                  minOption.disabled = true;
+                }
+              });
+            }
+          });
+          
+          Array.from(endHourPicker.options).forEach(function(option) {
+            const hour = parseInt(option.value);
+            if (hour < now.getHours()) {
+              option.disabled = true;
+            } else if (hour === now.getHours()) {
+              Array.from(endMinutePicker.options).forEach(function(minOption) {
+                const minute = parseInt(minOption.value);
+                if (minute < Math.ceil(now.getMinutes() / 10) * 10) {
+                  minOption.disabled = true;
+                }
+              });
+            }
+          });
+        }
         
         // hiddenフィールドに初期値を設定
         updateHiddenTimeFields();
@@ -700,6 +898,35 @@
               e.preventDefault();
               alert('終了時間は開始時間より後である必要があります。');
               return false;
+            }
+            
+            // 過去の日時チェック
+            const dateDisplay = document.getElementById('reservation_date_display');
+            if (dateDisplay && dateDisplay.textContent) {
+              const dateText = dateDisplay.textContent;
+              const dateMatch = dateText.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
+              
+              if (dateMatch) {
+                const year = parseInt(dateMatch[1]);
+                const month = parseInt(dateMatch[2]) - 1;
+                const day = parseInt(dateMatch[3]);
+                
+                const selectedStartTime = new Date(year, month, day, startHour, startMinute, 0);
+                const selectedEndTime = new Date(year, month, day, endHour, endMinute, 0);
+                const now = new Date();
+                
+                if (selectedStartTime < now) {
+                  e.preventDefault();
+                  alert('過去の日時での予約はできません。');
+                  return false;
+                }
+                
+                if (selectedEndTime < now) {
+                  e.preventDefault();
+                  alert('過去の日時での予約はできません。');
+                  return false;
+                }
+              }
             }
           }
         });

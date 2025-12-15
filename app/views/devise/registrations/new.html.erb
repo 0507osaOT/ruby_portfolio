@@ -11,6 +11,11 @@
       </div>
 
       <div class="form-group">
+        <%= f.label :phone_number, "電話番号" %>
+        <%= f.text_field :phone_number, autocomplete: "tel", class: "form-input" %>
+      </div>
+
+      <div class="form-group">
         <%= f.label :email, "メールアドレス" %>
         <%= f.email_field :email, autocomplete: "email", class: "form-input" %>
       </div>

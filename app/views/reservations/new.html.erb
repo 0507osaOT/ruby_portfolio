@@ -138,6 +138,10 @@
 <%= javascript_include_tag "index-schedule", "data-turbo-track": "reload", defer: true %>
 
 <script>
+  // 現在のユーザーIDをJavaScriptに渡す
+  window.currentUserId = <%= current_user&.id || 'null' %>;
+  window.currentUserIsAdmin = <%= (current_user&.admin? ? 'true' : 'false') %>;
+  
   <%= File.read(Rails.root.join('app/javascript/index-schedule.js')).html_safe %>
   
   // 一般ユーザー用の予約作成機能を追加
@@ -150,6 +154,14 @@
     window.handleSlotSelection = function(info, calendar) {
       const start = new Date(info.startStr);
       const end = new Date(info.endStr);
+      const now = new Date();
+      
+      // 過去の時間スロットを選択できないようにする
+      if (start < now) {
+        alert('過去の時間は予約できません');
+        calendar.unselect();
+        return;
+      }
       
       // 空き枠を確認
       const dateStr = start.toISOString().split('T')[0];
@@ -180,6 +192,13 @@
     };
     
     function openReservationForm(start, end) {
+      // 過去の時間チェック
+      const now = new Date();
+      if (start < now) {
+        alert('過去の時間は予約できません');
+        return;
+      }
+      
       const startTimeInput = document.getElementById('reservation_start_time');
       const endTimeInput = document.getElementById('reservation_end_time');
       const startHourPicker = document.getElementById('start_hour_input');
@@ -219,6 +238,63 @@
           const month = String(start.getMonth() + 1).padStart(2, '0');
           const day = String(start.getDate()).padStart(2, '0');
           dateDisplay.textContent = year + '年' + month + '月' + day + '日';
+        }
+        
+        // 過去の時間を選択できないようにする（今日の場合）
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const selectedDate = new Date(start);
+        selectedDate.setHours(0, 0, 0, 0);
+        const isToday = selectedDate.getTime() === today.getTime();
+        
+        if (isToday) {
+          // 過去の時間を無効化
+          Array.from(startHourPicker.options).forEach(function(option) {
+            const hour = parseInt(option.value);
+            if (hour < now.getHours()) {
+              option.disabled = true;
+            } else if (hour === now.getHours()) {
+              // 現在時刻と同じ時間の場合、過去の分を無効化
+              Array.from(startMinutePicker.options).forEach(function(minOption) {
+                const minute = parseInt(minOption.value);
+                if (minute < Math.ceil(now.getMinutes() / 10) * 10) {
+                  minOption.disabled = true;
+                }
+              });
+            } else {
+              option.disabled = false;
+            }
+          });
+          
+          Array.from(endHourPicker.options).forEach(function(option) {
+            const hour = parseInt(option.value);
+            if (hour < now.getHours()) {
+              option.disabled = true;
+            } else if (hour === now.getHours()) {
+              Array.from(endMinutePicker.options).forEach(function(minOption) {
+                const minute = parseInt(minOption.value);
+                if (minute < Math.ceil(now.getMinutes() / 10) * 10) {
+                  minOption.disabled = true;
+                }
+              });
+            } else {
+              option.disabled = false;
+            }
+          });
+        } else {
+          // 明日以降の場合は全て有効化
+          Array.from(startHourPicker.options).forEach(function(option) {
+            option.disabled = false;
+          });
+          Array.from(startMinutePicker.options).forEach(function(option) {
+            option.disabled = false;
+          });
+          Array.from(endHourPicker.options).forEach(function(option) {
+            option.disabled = false;
+          });
+          Array.from(endMinutePicker.options).forEach(function(option) {
+            option.disabled = false;
+          });
         }
         
         document.getElementById('createReservationModal').style.display = 'block';
@@ -356,6 +432,35 @@
               e.preventDefault();
               alert('終了時間は開始時間より後である必要があります。');
               return false;
+            }
+            
+            // 過去の日時チェック
+            const dateDisplay = document.getElementById('reservation_date_display');
+            if (dateDisplay && dateDisplay.textContent) {
+              const dateText = dateDisplay.textContent;
+              const dateMatch = dateText.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
+              
+              if (dateMatch) {
+                const year = parseInt(dateMatch[1]);
+                const month = parseInt(dateMatch[2]) - 1;
+                const day = parseInt(dateMatch[3]);
+                
+                const selectedStartTime = new Date(year, month, day, startHour, startMinute, 0);
+                const selectedEndTime = new Date(year, month, day, endHour, endMinute, 0);
+                const now = new Date();
+                
+                if (selectedStartTime < now) {
+                  e.preventDefault();
+                  alert('過去の日時での予約はできません。');
+                  return false;
+                }
+                
+                if (selectedEndTime < now) {
+                  e.preventDefault();
+                  alert('過去の日時での予約はできません。');
+                  return false;
+                }
+              }
             }
           }
         });

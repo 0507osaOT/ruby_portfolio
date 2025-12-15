@@ -131,18 +131,29 @@ function showReservationDetails(event) {
   const props = event.extendedProps;
   const statusBadge = getStatusBadge(props.status);
   
-  const startTime = event.start.toLocaleString('ja-JP', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  // FullCalendarのイベントオブジェクトから日時を取得
+  // timeZone: 'Asia/Tokyo'が設定されているので、既にJSTに変換されている
+  // toLocaleStringにtimeZoneを指定すると二重変換になるため、指定しない
+  const startDate = event.start;
+  const endDate = event.end;
   
-  const endTime = event.end ? event.end.toLocaleString('ja-JP', {
-    hour: '2-digit',
-    minute: '2-digit'
-  }) : '';
+  // 年、月、日、時、分を個別に取得してフォーマット（秒は表示しない）
+  const startYear = startDate.getFullYear();
+  const startMonth = String(startDate.getMonth() + 1).padStart(2, '0');
+  const startDay = String(startDate.getDate()).padStart(2, '0');
+  const startHour = String(startDate.getHours()).padStart(2, '0');
+  const startMinute = String(startDate.getMinutes()).padStart(2, '0');
+  const startTime = `${startYear}/${startMonth}/${startDay} ${startHour}:${startMinute}`;
+  
+  let endTime = '';
+  if (endDate) {
+    const endYear = endDate.getFullYear();
+    const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
+    const endDay = String(endDate.getDate()).padStart(2, '0');
+    const endHour = String(endDate.getHours()).padStart(2, '0');
+    const endMinute = String(endDate.getMinutes()).padStart(2, '0');
+    endTime = `${endYear}/${endMonth}/${endDay} ${endHour}:${endMinute}`;
+  }
   
   let html = '<p><strong>お客様名:</strong> ' + (props.customer || 'N/A') + '</p>';
   html += '<p><strong>電話番号:</strong> ' + (props.phone || 'N/A') + '</p>';

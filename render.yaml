@@ -1,0 +1,53 @@
+################################################################
+# Render Blueprint for Attendance Tutorial                     #
+# Rails 7.1.5.2 + Ruby 3.0.6 + PostgreSQL                     #
+################################################################
+
+# Preview environments disabled for Hobby workspace
+# previews:
+#   generation: automatic
+
+services:
+  # Rails Web Application
+  - type: web
+    runtime: docker
+    name: attendance-tutorial
+    repo: https://github.com/<0507osaOT>/<ruby_portfolio>.git
+    branch: main
+    dockerfilePath: ./Dockerfile
+    plan: free # Free tier
+    region: oregon # Default region
+    healthCheckPath: /
+
+    # Environment variables
+    envVars:
+      # Rails configuration
+      - key: RAILS_ENV
+        value: production
+
+      - key: RAILS_MASTER_KEY
+        generateValue: true
+
+      - key: SECRET_KEY_BASE
+        generateValue: true
+
+      # External Database connection (Neon Tech)
+      # Set manually in Render Dashboard
+      - key: DATABASE_URL
+        sync: false
+
+      # Additional Rails settings
+      - key: RAILS_MAX_THREADS
+        value: "5"
+
+      - key: PORT
+        value: "3000"
+
+      - key: RAILS_SERVE_STATIC_FILES
+        value: "true"
+
+      - key: RAILS_LOG_TO_STDOUT
+        value: "true"
+
+# External Database: Using Neon Tech PostgreSQL (free)
+# No managed database needed - using external Neon Tech service

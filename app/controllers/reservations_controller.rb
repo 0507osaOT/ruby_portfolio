@@ -33,17 +33,37 @@ class ReservationsController < ApplicationController
     if @reservation.customer_email.blank?
       @reservation.customer_email = current_user.email
     end
+    if @reservation.customer_phone.blank?
+      @reservation.customer_phone = current_user.phone_number
+    end
     
     if @reservation.save
+      # 確認メールを送信
+      mail_sent = false
+      begin
+        if Rails.env.development?
+          ReservationMailer.confirmation_email(@reservation).deliver_now
+          mail_sent = true
+        else
+          ReservationMailer.confirmation_email(@reservation).deliver_later
+          mail_sent = true
+        end
+      rescue => e
+        # 開発環境でのメール送信エラーはログに記録するが、予約処理は続行
+        Rails.logger.warn "メール送信に失敗しました: #{e.message}"
+        mail_sent = false
+      end
+      
       # リダイレクト先を決定
       return_to = params[:return_to]
+      notice_message = mail_sent ? '予約が完了しました。確認メールを送信しました。' : '予約が完了しました。（メール送信はスキップされました）'
       
       if return_to == 'calendars'
-        redirect_to calendars_reservations_path, notice: '予約が正常に作成されました。'
+        redirect_to calendars_reservations_path, notice: notice_message
       elsif return_to == 'new' && params[:date].present?
-        redirect_to new_reservation_path(date: params[:date]), notice: '予約が正常に作成されました。'
+        redirect_to new_reservation_path(date: params[:date]), notice: notice_message
       else
-        redirect_to reservation_path(@reservation), notice: '予約が正常に作成されました。'
+        redirect_to reservation_path(@reservation), notice: notice_message
       end
     else
       @date = params[:date].present? ? Date.parse(params[:date]) : Date.today
@@ -79,7 +99,22 @@ class ReservationsController < ApplicationController
     authorize @reservation, :update?
     
     if @reservation.update(reservation_params)
-      redirect_to reservations_path, notice: '予約を更新しました。'
+      # 変更通知メールを送信
+      mail_sent = false
+      begin
+        if Rails.env.development?
+          ReservationMailer.update_notification_email(@reservation).deliver_now
+          mail_sent = true
+        else
+          ReservationMailer.update_notification_email(@reservation).deliver_later
+          mail_sent = true
+        end
+      rescue => e
+        Rails.logger.warn "メール送信に失敗しました: #{e.message}"
+        mail_sent = false
+      end
+      notice_message = mail_sent ? '予約を更新しました。変更通知メールを送信しました。' : '予約を更新しました。（メール送信はスキップされました）'
+      redirect_to reservations_path, notice: notice_message
     else
       redirect_to reservations_path, alert: '予約の更新に失敗しました。'
     end
@@ -89,8 +124,28 @@ class ReservationsController < ApplicationController
     @reservation = Reservation.find(params[:id])
     authorize @reservation, :destroy?
     
+    user_email = @reservation.user&.email
+    reservation_copy = @reservation.dup # メール送信用にコピー
+    
     if @reservation.destroy
-      redirect_to reservations_path, notice: '予約を削除しました。'
+      # キャンセル通知メールを送信
+      mail_sent = false
+      if user_email.present?
+        begin
+          if Rails.env.development?
+            ReservationMailer.cancellation_email(reservation_copy, user_email).deliver_now
+            mail_sent = true
+          else
+            ReservationMailer.cancellation_email(reservation_copy, user_email).deliver_later
+            mail_sent = true
+          end
+        rescue => e
+          Rails.logger.warn "メール送信に失敗しました: #{e.message}"
+          mail_sent = false
+        end
+      end
+      notice_message = mail_sent ? '予約をキャンセルしました。キャンセル通知メールを送信しました。' : '予約をキャンセルしました。（メール送信はスキップされました）'
+      redirect_to reservations_path, notice: notice_message
     else
       redirect_to reservations_path, alert: '予約の削除に失敗しました。'
     end

@@ -14,7 +14,9 @@
     <% if notice %>
       <div class="alert alert-notice"><%= notice %></div>
     <% end %>
-    <% if alert %>
+    <%# 特定の「ログインまたは登録が必要です。」メッセージは表示しない %>
+    <% unauth_msg = I18n.t("devise.failure.unauthenticated", default: nil) %>
+    <% if alert.present? && alert != unauth_msg %>
       <div class="alert alert-alert"><%= alert %></div>
     <% end %>
 

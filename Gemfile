@@ -46,6 +46,7 @@ gem 'devise-i18n'
 gem 'ransack'
 gem 'kaminari'
 gem 'pundit'
+gem 'resend'
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

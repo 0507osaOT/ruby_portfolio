@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      background-color: #4CAF50;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .content {
+      padding: 20px;
+      background-color: #f9f9f9;
+    }
+    .reservation-details {
+      background-color: white;
+      padding: 15px;
+      margin: 15px 0;
+      border: 1px solid #eee;
+    }
+    .footer {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>ご予約ありがとうございます</h1>
+    </div>
+    <div class="content">
+      <p><%= @user.name %> 様</p>
+      <p>以下の内容でご予約を承りました。</p>
+      <div class="reservation-details">
+        <h3>予約詳細</h3>
+        <p><strong>予約番号:</strong> <%= @reservation.id %></p>
+        <p><strong>予約日時:</strong> <%= @reservation.start_time.strftime('%Y年%m月%d日 %H:%M') %></p>
+        <p><strong>終了時刻:</strong> <%= @reservation.end_time.strftime('%H:%M') %></p>
+        <p><strong>お名前:</strong> <%= @user.name %></p>
+        <p><strong>電話番号:</strong> <%= @user.phone_number %></p>
+        <p><strong>メールアドレス:</strong> <%= @user.email %></p>
+        <% if @reservation.notes.present? %>
+          <p><strong>備考:</strong> <%= @reservation.notes %></p>
+        <% end %>
+      </div>
+      <p>当日お待ちしております。</p>
+      <p>※このメールは送信専用です。ご返信いただいてもお答えできませんのでご了承ください。</p>
+    </div>
+    <div class="footer">
+      <p>予約管理システム</p>
+      <p>お問い合わせ: support@yourapp.com</p>
+    </div>
+  </div>
+</body>
+</html>
+

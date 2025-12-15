@@ -103,7 +103,7 @@
       timeZone: 'Asia/Tokyo',
       
       headerToolbar: {
-        left: 'prev,next today',
+        left: '',
         center: 'title',
         right: ''
       },
@@ -151,6 +151,23 @@
       },
       
       eventClick: function(info) {
+        // 一般ユーザーの場合、他のユーザーの予約はクリックできないようにする
+        const props = info.event.extendedProps;
+        const isOtherUser = props && props.is_other_user === true;
+        const eventUserId = props ? props.user_id : null;
+        const currentUserIdNum = window.currentUserId ? parseInt(window.currentUserId) : null;
+        const eventUserIdNum = eventUserId ? parseInt(eventUserId) : null;
+        const isMyReservation = currentUserIdNum && eventUserIdNum && eventUserIdNum === currentUserIdNum;
+        
+        // 管理者の場合は全ての予約を見れる
+        const isAdmin = window.currentUserIsAdmin === true;
+        
+        // 一般ユーザーで他のユーザーの予約の場合は、モーダルを表示しない
+        if (!isAdmin && (isOtherUser || !isMyReservation)) {
+          console.log('他のユーザーの予約のため、詳細を表示しません');
+          return;
+        }
+        
         showEventDetails(info.event);
       },
       
@@ -398,16 +415,56 @@
    * イベント詳細表示
    */
   function showEventDetails(event) {
+    // 一般ユーザーの場合、他のユーザーの予約は表示しない（念のため二重チェック）
     const props = event.extendedProps;
+    const isOtherUser = props && props.is_other_user === true;
+    const eventUserId = props ? props.user_id : null;
+    const currentUserIdNum = window.currentUserId ? parseInt(window.currentUserId) : null;
+    const eventUserIdNum = eventUserId ? parseInt(eventUserId) : null;
+    const isMyReservation = currentUserIdNum && eventUserIdNum && eventUserIdNum === currentUserIdNum;
+    
+    // 管理者の場合は全ての予約を見れる
+    const isAdmin = window.currentUserIsAdmin === true;
+    
+    // 一般ユーザーで他のユーザーの予約の場合は、モーダルを表示しない
+    if (!isAdmin && (isOtherUser || !isMyReservation)) {
+      console.log('他のユーザーの予約のため、詳細を表示しません');
+      return;
+    }
+    
     const statusLabels = {
       'confirmed': '確定',
       'pending': '保留中',
       'cancelled': 'キャンセル'
     };
     
+    // FullCalendarのイベントオブジェクトから日時を取得
+    // timeZone: 'Asia/Tokyo'が設定されているので、既にJSTに変換されている
+    // toLocaleStringにtimeZoneを指定すると二重変換になるため、指定しない
+    const startDate = event.start;
+    const endDate = event.end;
+    
+    // 年、月、日、時、分を個別に取得してフォーマット（秒は表示しない）
+    const startYear = startDate.getFullYear();
+    const startMonth = String(startDate.getMonth() + 1).padStart(2, '0');
+    const startDay = String(startDate.getDate()).padStart(2, '0');
+    const startHour = String(startDate.getHours()).padStart(2, '0');
+    const startMinute = String(startDate.getMinutes()).padStart(2, '0');
+    const startTime = `${startYear}/${startMonth}/${startDay} ${startHour}:${startMinute}`;
+    
+    let endTime = '';
+    if (endDate) {
+      const endYear = endDate.getFullYear();
+      const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
+      const endDay = String(endDate.getDate()).padStart(2, '0');
+      const endHour = String(endDate.getHours()).padStart(2, '0');
+      const endMinute = String(endDate.getMinutes()).padStart(2, '0');
+      endTime = `${endYear}/${endMonth}/${endDay} ${endHour}:${endMinute}`;
+    }
+    
     let html = '<p><strong>お客様名:</strong> ' + escapeHtml(event.title) + '</p>' +
-               '<p><strong>開始:</strong> ' + event.start.toLocaleString('ja-JP') + '</p>' +
-               '<p><strong>終了:</strong> ' + event.end.toLocaleString('ja-JP') + '</p>' +
+               '<p><strong>開始:</strong> ' + startTime + '</p>' +
+               '<p><strong>終了:</strong> ' + endTime + '</p>' +
                '<p><strong>メール:</strong> ' + (props.email ? escapeHtml(props.email) : 'なし') + '</p>' +
                '<p><strong>電話:</strong> ' + (props.phone ? escapeHtml(props.phone) : 'なし') + '</p>' +
                '<p><strong>ステータス:</strong> <span class="badge ' + props.status + '">' + 

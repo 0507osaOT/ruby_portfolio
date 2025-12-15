@@ -24,7 +24,7 @@
                 </div>
               </div>
               
-              <div class="card-item">
+              <div class="card-item status-item">
                 <div class="card-label">ステータス</div>
                 <div class="card-value">
                   <% 
@@ -45,7 +45,7 @@
               <% if reservation.notes.present? %>
                 <div class="card-item notes-item">
                   <div class="card-label">備考</div>
-                  <div class="card-value"><%= simple_format(reservation.notes) %></div>
+                  <div class="card-value"><%= reservation.notes %></div>
                 </div>
               <% end %>
             </div>

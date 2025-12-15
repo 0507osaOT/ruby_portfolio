@@ -13,19 +13,14 @@
       <%= render "devise/shared/error_messages", resource: resource %>
 
       <div class="form-group">
-        <%= f.label :name, "お名前" %>
-        <%= f.text_field :name, autofocus: true, autocomplete: "name", class: "form-input" %>
+        <%= f.label :email, "メールアドレス" %>
+        <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "form-input" %>
+        <p class="form-hint">現在のメールアドレス: <strong><%= resource.email %></strong></p>
       </div>
 
       <div class="form-group">
         <%= f.label :phone_number, "電話番号" %>
         <%= f.text_field :phone_number, autocomplete: "tel", class: "form-input" %>
-      </div>
-
-      <div class="form-group">
-        <%= f.label :email, "メールアドレス" %>
-        <%= f.email_field :email, autocomplete: "email", class: "form-input" %>
-        <p class="form-hint">現在のメールアドレス: <strong><%= current_user.email %></strong></p>
       </div>
 
       <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
@@ -60,21 +55,9 @@
     <% end %>
 
     <div class="auth-links">
-      <% if current_user&.admin? %>
-        <%= link_to "戻る", admin_reservations_path, class: "btn btn-secondary" %>
-      <% else %>
-        <%= link_to "戻る", new_reservation_path, class: "btn btn-secondary" %>
-      <% end %>
-      <%= button_to "ログアウト", destroy_user_session_path, method: :delete, class: "btn btn-danger", form: { data: { turbo: false, confirm: "ログアウトしますか？" } } %>
+      <%= link_to "戻る", admin_reservations_path, class: "btn btn-secondary" %>
+      <%= button_to "ログアウト", destroy_admin_session_path, method: :delete, class: "btn btn-danger", form: { data: { turbo: false, confirm: "ログアウトしますか？" } } %>
     </div>
-
-    <hr />
-
-    <h3>アカウント削除</h3>
-    <p>アカウントを削除しますか？</p>
-    <%= button_to "アカウントを削除", registration_path(resource_name), 
-        data: { confirm: "本当に削除しますか？この操作は取り消せません。", turbo_confirm: "本当に削除しますか？この操作は取り消せません。" }, 
-        method: :delete, 
-        class: "btn btn-danger" %>
   </div>
 </div>
+

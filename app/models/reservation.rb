@@ -117,8 +117,9 @@ class Reservation < ApplicationRecord
   def capacity_limit
     return if start_time.blank? || end_time.blank?
     
+    # 重複する時間帯の予約をカウント（完全一致だけでなく、時間が重なる予約も含む）
     overlapping_count = Reservation.where.not(id: id)
-                                   .at_time_slot(start_time, end_time)
+                                   .overlapping(start_time, end_time)
                                    .count
     
     if overlapping_count >= MAX_CAPACITY
@@ -128,6 +129,18 @@ class Reservation < ApplicationRecord
   
   def within_business_hours
     return if start_time.blank? || end_time.blank?
+    
+    # 過去の日時での予約を防ぐ
+    now = Time.current
+    if start_time < now
+      errors.add(:base, '過去の日時での予約はできません')
+      return
+    end
+    
+    if end_time < now
+      errors.add(:base, '過去の日時での予約はできません')
+      return
+    end
     
     business_start = start_time.change(hour: 9, min: 0)
     business_end = start_time.change(hour: 18, min: 0)

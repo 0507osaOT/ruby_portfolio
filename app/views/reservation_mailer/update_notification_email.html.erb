@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      background-color: #FF9800;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .content {
+      padding: 20px;
+      background-color: #f9f9f9;
+    }
+    .reservation-details {
+      background-color: white;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 5px;
+    }
+    .footer {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>予約内容が変更されました</h1>
+    </div>
+    <div class="content">
+      <p><%= @user.name %> 様</p>
+      <p>ご予約内容が以下のように変更されました。</p>
+      <div class="reservation-details">
+        <h3>変更後の予約詳細</h3>
+        <p><strong>予約番号:</strong> <%= @reservation.id %></p>
+        <p><strong>予約日時:</strong> <%= @reservation.start_time.strftime('%Y年%m月%d日 %H:%M') %></p>
+        <p><strong>終了時刻:</strong> <%= @reservation.end_time.strftime('%H:%M') %></p>
+        <p><strong>お名前:</strong> <%= @user.name %></p>
+        <p><strong>電話番号:</strong> <%= @user.phone_number %></p>
+        <% if @reservation.notes.present? %>
+          <p><strong>備考:</strong> <%= @reservation.notes %></p>
+        <% end %>
+      </div>
+      <p>ご確認をお願いいたします。</p>
+    </div>
+    <div class="footer">
+      <p>予約管理システム</p>
+    </div>
+  </div>
+</body>
+</html>
+
