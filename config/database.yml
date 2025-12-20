@@ -13,6 +13,7 @@ test:
   database: ruby_portfolio_test
 
 production:
+  <<: *default
   encoding: unicode
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
   url: <%= ENV['DATABASE_URL'] %>
