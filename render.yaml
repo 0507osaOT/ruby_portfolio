@@ -12,7 +12,7 @@ services:
   - type: web
     runtime: docker
     name: attendance-tutorial
-    repo: https://github.com/<0507osaOT>/<ruby_portfolio>.git
+    repo: https://github.com/0507osaOT/ruby_portfolio.git
     branch: main
     dockerfilePath: ./Dockerfile
     plan: free # Free tier
