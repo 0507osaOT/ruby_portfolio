@@ -6,7 +6,7 @@ Rails.application.routes.draw do
   }
   
   # 管理者用Devise（登録は無効化、編集は有効）
-  devise_for :admins, skip: [:registrations], controllers: {
+  devise_for :admins, class_name: 'AdminUser', skip: [:registrations], controllers: {
     registrations: 'admins/registrations'
   }
   
