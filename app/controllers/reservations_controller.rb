@@ -48,6 +48,12 @@ class ReservationsController < ApplicationController
           ReservationMailer.confirmation_email(@reservation).deliver_later
           mail_sent = true
         end
+
+        # 予約開始24時間前にリマインダーメールを送信するジョブをスケジュール
+        if @reservation.start_time.present?
+          run_at = @reservation.start_time - 1.day
+          SendReservationReminderJob.set(wait_until: run_at).perform_later(@reservation.id)
+        end
       rescue => e
         # 開発環境でのメール送信エラーはログに記録するが、予約処理は続行
         Rails.logger.warn "メール送信に失敗しました: #{e.message}"
