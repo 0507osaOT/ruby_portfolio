@@ -1,5 +1,8 @@
 予約管理システム
 
+◾️仕様書
+https://docs.google.com/spreadsheets/d/1Jl-OSbezxKP92fu0ab0bG83ZYvw4CHPMdt6OWzyhsH0/edit?gid=621927627#gid=621927627
+
 【概要】
 
 飲食店や美容院などの予約を管理できる Web アプリケーションを実装しました。ユーザーは自分の予約を作成・確認でき、管理者は全ての予約を管理できます。
@@ -9,13 +12,21 @@
 
 ・予約管理: 　　　予約の作成・編集・削除、一覧表示
 
+<img width="545" height="430" alt="スクリーンショット 2025-12-05 14 50 57" src="https://github.com/user-attachments/assets/7ce279d8-1db2-4160-88be-863fa86c4f16" />
+
+
 ・カレンダー機能: 月次・単日カレンダー表示、空き枠確認（同時刻最大 3 組）
+<img width="545" height="430" alt="スクリーンショット 2025-12-05 15 01 27" src="https://github.com/user-attachments/assets/81eabb94-5f03-4c4b-91d3-7fbf3997ca8f" />
 
 ・検索機能: 　　　名前・電話番号・メールアドレス・日時での検索
+
+<img width="545" height="430" alt="スクリーンショット 2025-12-04 0 22 22" src="https://github.com/user-attachments/assets/09e6d6e2-20b9-4278-b14b-936bc4882c55" />
+
 
 ・権限管理: 　　　一般ユーザーは自分の予約のみ、管理者は全予約を管理
 
 ・メール通知: 　　予約確認・変更・キャンセル・リマインダーメールの自動送信（Resend API 使用）
+<img width="545" height="430" alt="スクリーンショット 2025-12-25 22 12 58" src="https://github.com/user-attachments/assets/2a6ad934-91ab-4443-8d0e-8d93af573940" />
 
 ◾️ 使用技術・ツール
 
