@@ -256,18 +256,10 @@
         
         // グローバルスコープに明示的に定義
         window.openDeleteModal = function(reservationId, customerName, datetime) {
-          console.log('openDeleteModal called', reservationId, customerName, datetime);
           const nameElement = document.getElementById('delete-reservation-name');
           const datetimeElement = document.getElementById('delete-reservation-datetime');
           const form = document.getElementById('deleteForm');
           const modal = document.getElementById('deleteModal');
-          
-          console.log('Elements found:', {
-            nameElement: !!nameElement,
-            datetimeElement: !!datetimeElement,
-            form: !!form,
-            modal: !!modal
-          });
           
           if (nameElement && datetimeElement && form && modal) {
             nameElement.textContent = customerName;
@@ -292,9 +284,6 @@
             }
             
             modal.style.display = 'block';
-            console.log('Modal should be visible now');
-          } else {
-            console.error('Some elements not found');
           }
         };
         
@@ -307,8 +296,6 @@
         
         // DOMContentLoaded後にイベントリスナーを設定
         document.addEventListener('DOMContentLoaded', function() {
-          console.log('DOMContentLoaded - setting up edit and delete modals');
-          
           // 削除フォーム送信時にCSRFトークンを更新
           const deleteForm = document.getElementById('deleteForm');
           if (deleteForm) {
@@ -339,11 +326,9 @@
               const startTime = this.getAttribute('data-start-time');
               const endTime = this.getAttribute('data-end-time');
               const notes = this.getAttribute('data-notes');
-              console.log('Edit button clicked', reservationId, startTime, endTime, notes);
               window.openEditModal(reservationId, startTime, endTime, notes);
             });
           });
-          console.log('Edit buttons found:', editButtons.length);
           
           // 編集モーダルの時間ピッカーにイベントリスナーを追加
           const editStartHourPicker = document.getElementById('edit_start_hour_input');
@@ -457,18 +442,13 @@
               const reservationId = this.getAttribute('data-reservation-id');
               const customerName = this.getAttribute('data-customer-name');
               const datetime = this.getAttribute('data-datetime');
-              console.log('Delete button clicked', reservationId, customerName, datetime);
               window.openDeleteModal(reservationId, customerName, datetime);
             });
           });
-          console.log('Delete buttons found:', deleteButtons.length);
           
           const closeButton = document.getElementById('close-delete-modal');
           if (closeButton) {
             closeButton.addEventListener('click', window.closeDeleteModal);
-            console.log('Close button listener attached');
-          } else {
-            console.error('Close button not found');
           }
           
           // モーダル外をクリックしたときに閉じる

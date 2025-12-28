@@ -3,9 +3,6 @@
 (function() {
   'use strict';
   
-  console.log('=== User Reservation Schedule Initialization ===');
-  console.log('FullCalendar:', typeof FullCalendar);
-  
   // ライブラリチェック
   if (typeof FullCalendar === 'undefined') {
     const statusEl = document.getElementById('status');
@@ -93,8 +90,6 @@
         }
       }
     }
-    
-    console.log('Creating calendar for:', dateStr);
 
     const calendar = new FullCalendar.Calendar(calendarEl, {
       initialView: 'timeGridDay',
@@ -164,7 +159,6 @@
         
         // 一般ユーザーで他のユーザーの予約の場合は、モーダルを表示しない
         if (!isAdmin && (isOtherUser || !isMyReservation)) {
-          console.log('他のユーザーの予約のため、詳細を表示しません');
           return;
         }
         
@@ -181,11 +175,6 @@
         
         // 他のユーザーの予約かどうかを確認
         const isOtherUser = info.event.extendedProps && info.event.extendedProps.is_other_user === true;
-        
-        // デバッグ用ログ
-        if (isOtherUser) {
-          console.log('他のユーザーの予約を検出:', info.event.title, info.event.extendedProps);
-        }
         
         let bgColor, textColor;
         
@@ -282,7 +271,6 @@
     });
     
     calendar.render();
-    console.log('✅ Calendar rendered');
     
     window.userScheduleCalendar = calendar;
     
@@ -363,7 +351,6 @@
    */
   function loadEvents(info, successCallback, failureCallback) {
     const url = '/admin/reservations/calendar?start=' + info.startStr + '&end=' + info.endStr;
-    console.log('📅 Fetching events:', url);
     
     fetch(url)
       .then(function(response) {
@@ -371,9 +358,6 @@
         return response.json();
       })
       .then(function(data) {
-        console.log('✅ Loaded', data.length, 'events');
-        console.log('Events data:', data);
-        
         const events = data.map(function(event) {
           // extendedPropsが存在しない場合は初期化
           if (!event.extendedProps) {
@@ -428,7 +412,6 @@
     
     // 一般ユーザーで他のユーザーの予約の場合は、モーダルを表示しない
     if (!isAdmin && (isOtherUser || !isMyReservation)) {
-      console.log('他のユーザーの予約のため、詳細を表示しません');
       return;
     }
     

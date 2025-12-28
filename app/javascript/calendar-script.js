@@ -1,20 +1,11 @@
-console.log('calendar-script.js loaded');
-
 let calendar;
 
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('DOM Content Loaded');
-  
   const calendarEl = document.getElementById('calendar');
   
   if (!calendarEl) {
-    console.log('Calendar element not found - not on calendar page');
     return;
   }
-  
-  console.log('Calendar element found');
-  console.log('FullCalendar available:', typeof FullCalendar !== 'undefined');
-  console.log('Events URL:', window.calendarEventsUrl);
   
   // カレンダーの初期化
   calendar = new FullCalendar.Calendar(calendarEl, {
@@ -33,17 +24,14 @@ document.addEventListener('DOMContentLoaded', function() {
     },
     
     eventClick: function(info) {
-      console.log('Event clicked');
       showReservationDetails(info.event);
     },
     
     dateClick: function(info) {
-      console.log('Date clicked: ' + info.dateStr);
     }
   });
   
   calendar.render();
-  console.log('Calendar rendered successfully');
   
   // ナビゲーションボタン
   const prevBtn = document.getElementById('prev-btn');
@@ -53,41 +41,33 @@ document.addEventListener('DOMContentLoaded', function() {
   if (prevBtn) {
     prevBtn.addEventListener('click', function(e) {
       e.preventDefault();
-      console.log('Prev clicked');
       calendar.prev();
       updateDatePicker();
     });
-    console.log('Prev button listener attached');
   }
   
   if (todayBtn) {
     todayBtn.addEventListener('click', function(e) {
       e.preventDefault();
-      console.log('Today clicked');
       calendar.today();
       updateDatePicker();
     });
-    console.log('Today button listener attached');
   }
   
   if (nextBtn) {
     nextBtn.addEventListener('click', function(e) {
       e.preventDefault();
-      console.log('Next clicked');
       calendar.next();
       updateDatePicker();
     });
-    console.log('Next button listener attached');
   }
   
   // 日付ピッカー
   const datePicker = document.getElementById('datePicker');
   if (datePicker) {
     datePicker.addEventListener('change', function() {
-      console.log('Date picker changed to:', this.value);
       calendar.gotoDate(this.value);
     });
-    console.log('Date picker listener attached');
   }
   
   updateDatePicker();
@@ -99,7 +79,6 @@ document.addEventListener('DOMContentLoaded', function() {
       e.preventDefault();
       closeModal();
     });
-    console.log('Close modal listener attached');
   }
   
   window.addEventListener('click', function(event) {
@@ -119,7 +98,6 @@ function updateDatePicker() {
   const month = String(currentDate.getMonth() + 1).padStart(2, '0');
   const day = String(currentDate.getDate()).padStart(2, '0');
   datePicker.value = year + '-' + month + '-' + day;
-  console.log('Date picker updated to:', datePicker.value);
 }
 
 function showReservationDetails(event) {

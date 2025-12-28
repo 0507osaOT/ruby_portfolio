@@ -145,23 +145,14 @@
   <!-- カスタムJS - Cursor内ブラウザ対応のためインラインで読み込み -->
   <script>
     // calendar-script.js の内容を直接記述
-    console.log('calendar-script.js loaded');
-    
     let calendar;
     
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('DOM Content Loaded');
-      
       const calendarEl = document.getElementById('calendar');
       
       if (!calendarEl) {
-        console.log('Calendar element not found - not on calendar page');
         return;
       }
-      
-      console.log('Calendar element found');
-      console.log('FullCalendar available:', typeof FullCalendar !== 'undefined');
-      console.log('Events URL:', window.calendarEventsUrl);
       
       // FullCalendarが読み込まれているか確認
       if (typeof FullCalendar === 'undefined') {
@@ -245,18 +236,6 @@
           const eventUserIdNum = eventUserId ? parseInt(eventUserId) : null;
           const isMyReservation = currentUserIdNum && eventUserIdNum && eventUserIdNum === currentUserIdNum;
           
-          // デバッグログ
-          console.log('eventDidMount:', {
-            title: info.event.title,
-            currentUserId: window.currentUserId,
-            eventUserId: eventUserId,
-            currentUserIdNum: currentUserIdNum,
-            eventUserIdNum: eventUserIdNum,
-            isMyReservation: isMyReservation,
-            isOtherUser: isOtherUser,
-            isPastEvent: isPastEvent
-          });
-          
           let bgColor, textColor;
           
           if (isOtherUser) {
@@ -322,8 +301,6 @@
         },
         
         eventClick: function(info) {
-          console.log('Event clicked');
-          
           // 一般ユーザーの場合、他のユーザーの予約はクリックできないようにする
           const props = info.event.extendedProps;
           const isOtherUser = props.is_other_user === true;
@@ -337,7 +314,6 @@
           
           // 一般ユーザーで他のユーザーの予約の場合は、モーダルを表示しない
           if (!isAdmin && (isOtherUser || !isMyReservation)) {
-            console.log('他のユーザーの予約のため、詳細を表示しません');
             return;
           }
           
@@ -345,7 +321,6 @@
         },
         
         dateClick: function(info) {
-          console.log('Date clicked: ' + info.dateStr);
         },
         
         // 日付ダブルクリックで予約フォームを開く
@@ -412,7 +387,6 @@
       });
       
       calendar.render();
-      console.log('Calendar rendered successfully');
       
       // ナビゲーションボタン
       const prevBtn = document.getElementById('prev-btn');
@@ -422,41 +396,33 @@
       if (prevBtn) {
         prevBtn.addEventListener('click', function(e) {
           e.preventDefault();
-          console.log('Prev clicked');
           calendar.prev();
           updateDatePicker();
         });
-        console.log('Prev button listener attached');
       }
       
       if (todayBtn) {
         todayBtn.addEventListener('click', function(e) {
           e.preventDefault();
-          console.log('Today clicked');
           calendar.today();
           updateDatePicker();
         });
-        console.log('Today button listener attached');
       }
       
       if (nextBtn) {
         nextBtn.addEventListener('click', function(e) {
           e.preventDefault();
-          console.log('Next clicked');
           calendar.next();
           updateDatePicker();
         });
-        console.log('Next button listener attached');
       }
       
       // 日付ピッカー
       const datePicker = document.getElementById('datePicker');
       if (datePicker) {
         datePicker.addEventListener('change', function() {
-          console.log('Date picker changed to:', this.value);
           calendar.gotoDate(this.value);
         });
-        console.log('Date picker listener attached');
       }
       
       updateDatePicker();
@@ -468,7 +434,6 @@
           e.preventDefault();
           closeModal();
         });
-        console.log('Close modal listener attached');
       }
       
       // 予約作成モーダルの閉じるボタン
@@ -570,7 +535,6 @@
       const month = String(currentDate.getMonth() + 1).padStart(2, '0');
       const day = String(currentDate.getDate()).padStart(2, '0');
       datePicker.value = year + '-' + month + '-' + day;
-      console.log('Date picker updated to:', datePicker.value);
     }
     
     function showReservationDetails(event) {
@@ -592,7 +556,6 @@
       
       // 一般ユーザーで他のユーザーの予約の場合は、モーダルを表示しない
       if (!isAdmin && (isOtherUser || !isMyReservation)) {
-        console.log('他のユーザーの予約のため、詳細を表示しません');
         return;
       }
       
@@ -828,11 +791,6 @@
       // hiddenフィールドにISO形式で設定
       startTimeInput.value = startTime.toISOString();
       endTimeInput.value = endTime.toISOString();
-      
-      console.log('Hidden fields updated:', {
-        start_time: startTimeInput.value,
-        end_time: endTimeInput.value
-      });
     }
     
     // 時間ピッカーにイベントリスナーを追加

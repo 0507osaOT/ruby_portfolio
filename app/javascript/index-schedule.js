@@ -3,9 +3,6 @@
 (function() {
   'use strict';
   
-  console.log('=== FullCalendar Initialization ===');
-  console.log('FullCalendar:', typeof FullCalendar);
-  
   // ライブラリチェック
   if (typeof FullCalendar === 'undefined') {
     const statusEl = document.getElementById('status');
@@ -73,8 +70,6 @@
     if (statusEl) {
       statusEl.style.display = 'none';
     }
-    
-    console.log('Creating calendar for:', dateStr);
 
     const calendar = new FullCalendar.Calendar(calendarEl, {
       initialView: 'timeGridDay',
@@ -157,7 +152,6 @@
         
         // 一般ユーザーで他のユーザーの予約の場合は、モーダルを表示しない
         if (!isAdmin && (isOtherUser || !isMyReservation)) {
-          console.log('他のユーザーの予約のため、詳細を表示しません');
           return;
         }
         
@@ -224,29 +218,16 @@
         const eventUserId = info.event.extendedProps ? info.event.extendedProps.user_id : null;
         const isMyReservation = window.currentUserId && eventUserId && eventUserId === window.currentUserId;
         
-        // デバッグ用ログ（すべてのイベントで出力）
-        console.log('eventDidMount 呼び出し:', {
-          title: info.event.title,
-          is_other_user: info.event.extendedProps ? info.event.extendedProps.is_other_user : 'undefined',
-          user_id: eventUserId,
-          current_user_id: window.currentUserId,
-          is_my_reservation: isMyReservation,
-          is_past_event: isPastEvent,
-          extendedProps: info.event.extendedProps
-        });
-        
         let bgColor, textColor;
         
         if (isOtherUser) {
           // 他のユーザーの予約は薄いグレー
           bgColor = '#e0e0e0';
           textColor = '#666666';
-          console.log('他のユーザーの予約として処理:', info.event.title);
         } else if (isMyReservation) {
           // 自身の予約はオレンジ色
           bgColor = '#ff9800'; // オレンジ
           textColor = '#ffffff';
-          console.log('自身の予約として処理（オレンジ）:', info.event.title);
         } else {
           // 自分の予約はユーザーごとの色（より目立たせる）
           const userId = info.event.extendedProps ? info.event.extendedProps.user_id : null;
@@ -343,7 +324,6 @@
     });
     
     calendar.render();
-    console.log('✅ Calendar rendered');
     
     window.scheduleCalendar = calendar;
     
@@ -379,7 +359,6 @@
     const url = isAdmin 
       ? '/admin/reservations/calendar?start=' + info.startStr + '&end=' + info.endStr
       : '/reservations/calendar?start=' + info.startStr + '&end=' + info.endStr;
-    console.log('📅 Fetching events:', url);
     
     fetch(url)
       .then(function(response) {
@@ -387,16 +366,7 @@
         return response.json();
       })
       .then(function(data) {
-        console.log('✅ Loaded', data.length, 'events');
-        console.log('Events data:', JSON.stringify(data, null, 2));
-        
         const events = data.map(function(event, index) {
-          console.log(`Event ${index}:`, {
-            id: event.id,
-            title: event.title,
-            extendedProps: event.extendedProps
-          });
-          
           // extendedPropsが存在しない場合は初期化
           if (!event.extendedProps) {
             event.extendedProps = {};
@@ -417,16 +387,10 @@
           // eventOrderで使用するため、slot_indexを直接プロパティに設定
           event.slot_index = event.extendedProps.slot_index;
           
-          // デバッグ用：is_other_userフラグを確認
-          if (event.extendedProps.is_other_user) {
-            console.log('他のユーザーの予約を検出（loadEvents）:', event.title, event.extendedProps);
-          }
-          
           delete event.resourceId;
           return event;
         });
         
-        console.log('Processed events:', events);
         successCallback(events);
       })
       .catch(function(error) {
@@ -460,7 +424,6 @@
     
     // 一般ユーザーで他のユーザーの予約の場合は、モーダルを表示しない
     if (!isAdmin && (isOtherUser || !isMyReservation)) {
-      console.log('他のユーザーの予約のため、詳細を表示しません');
       return;
     }
     
