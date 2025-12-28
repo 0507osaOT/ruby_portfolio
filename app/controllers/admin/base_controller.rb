@@ -3,14 +3,14 @@
 class Admin::BaseController < ApplicationController
   # ログイン必須
   before_action :authenticate_user!
-  
+
   # 管理者権限チェック
   before_action :require_admin!
-  
-  layout 'admin'
-  
+
+  layout "admin"
+
   private
-  
+
   # 管理者でない場合はアクセスを拒否
   def require_admin!
     unless current_user&.admin?
@@ -23,4 +23,3 @@ class Admin::BaseController < ApplicationController
     end
   end
 end
-

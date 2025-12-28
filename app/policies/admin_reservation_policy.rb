@@ -69,4 +69,3 @@ class AdminReservationPolicy < ApplicationPolicy
     end
   end
 end
-

@@ -42,14 +42,14 @@ Rails.application.configure do
 
   # Resend SMTP設定
   config.action_mailer.delivery_method = :smtp
-  resend_api_key = ENV['RESEND_API_KEY'].presence || 're_As5Pvfp6_HdDuUfUHHa4Y219KNkuWiDFH'
+  resend_api_key = ENV["RESEND_API_KEY"].presence || "re_As5Pvfp6_HdDuUfUHHa4Y219KNkuWiDFH"
   config.action_mailer.smtp_settings = {
-    address: 'smtp.resend.com',
+    address: "smtp.resend.com",
     port: 587,
-    domain: 'resend.com',
-    user_name: 'resend',
+    domain: "resend.com",
+    user_name: "resend",
     password: resend_api_key,
-    authentication: 'plain',
+    authentication: "plain",
     enable_starttls_auto: true
   }
 

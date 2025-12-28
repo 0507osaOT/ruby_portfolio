@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module AdminPolicies
   class ReservationsPolicy < ApplicationPolicy
     # 管理者のみがアクセス可能

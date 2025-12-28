@@ -6,4 +6,3 @@ class SendReservationReminderJob < ApplicationJob
     ReservationMailer.reminder_email(reservation).deliver_now
   end
 end
-

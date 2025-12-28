@@ -63,4 +63,3 @@ class ReservationPolicy < ApplicationPolicy
     end
   end
 end
-

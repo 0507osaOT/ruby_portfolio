@@ -7,7 +7,7 @@ class ReservationMailer < ApplicationMailer
     @user = reservation.user
     mail(
       to: @user.email,
-      subject: '【予約確認】 ご予約が完了しました'
+      subject: "【予約確認】 ご予約が完了しました"
     )
   end
 
@@ -17,7 +17,7 @@ class ReservationMailer < ApplicationMailer
     @user = reservation.user
     mail(
       to: @user.email,
-      subject: '【予約変更】 ご予約内容が変更されました！'
+      subject: "【予約変更】 ご予約内容が変更されました！"
     )
   end
 
@@ -27,7 +27,7 @@ class ReservationMailer < ApplicationMailer
     @user_email = user_email
     mail(
       to: @user_email,
-      subject: '【予約キャンセル】 ご予約がキャンセルされました！'
+      subject: "【予約キャンセル】 ご予約がキャンセルされました！"
     )
   end
 
@@ -37,8 +37,7 @@ class ReservationMailer < ApplicationMailer
     @user = reservation.user
     mail(
       to: @user.email,
-      subject: '【リマインダー】 明日のご予約について'
+      subject: "【リマインダー】 明日のご予約について"
     )
   end
 end
-

@@ -21,13 +21,13 @@ module RubyPortfolio
     #
     # These settings can be overridden in specific environments using the files
     # in config/environments, which are processed later.
-    
+
     # タイムゾーン設定
-    config.time_zone = 'Tokyo'
+    config.time_zone = "Tokyo"
     config.active_record.default_timezone = :local
-    
+
     # 日本語化設定
     config.i18n.default_locale = :ja
-    config.i18n.available_locales = [:ja, :en]
+    config.i18n.available_locales = [ :ja, :en ]
   end
 end
