@@ -41,13 +41,9 @@ class ReservationsController < ApplicationController
       # 確認メールを送信
       mail_sent = false
       begin
-        if Rails.env.development?
-          ReservationMailer.confirmation_email(@reservation).deliver_now
-          mail_sent = true
-        else
-          ReservationMailer.confirmation_email(@reservation).deliver_later
-          mail_sent = true
-        end
+        ReservationMailer.confirmation_email(@reservation).deliver_now
+        mail_sent = true
+        Rails.logger.info "予約確認メールを送信しました: reservation_id=#{@reservation.id}, user_email=#{@reservation.user&.email}"
 
         # 予約開始24時間前にリマインダーメールを送信するジョブをスケジュール
         if @reservation.start_time.present?
@@ -55,8 +51,9 @@ class ReservationsController < ApplicationController
           SendReservationReminderJob.set(wait_until: run_at).perform_later(@reservation.id)
         end
       rescue => e
-        # 開発環境でのメール送信エラーはログに記録するが、予約処理は続行
-        Rails.logger.warn "メール送信に失敗しました: #{e.message}"
+        # メール送信エラーはログに記録するが、予約処理は続行
+        Rails.logger.error "メール送信に失敗しました: #{e.class} - #{e.message}"
+        Rails.logger.error e.backtrace.join("\n") if Rails.env.production?
         mail_sent = false
       end
       
@@ -108,15 +105,12 @@ class ReservationsController < ApplicationController
       # 変更通知メールを送信
       mail_sent = false
       begin
-        if Rails.env.development?
-          ReservationMailer.update_notification_email(@reservation).deliver_now
-          mail_sent = true
-        else
-          ReservationMailer.update_notification_email(@reservation).deliver_later
-          mail_sent = true
-        end
+        ReservationMailer.update_notification_email(@reservation).deliver_now
+        mail_sent = true
+        Rails.logger.info "予約変更通知メールを送信しました: reservation_id=#{@reservation.id}, user_email=#{@reservation.user&.email}"
       rescue => e
-        Rails.logger.warn "メール送信に失敗しました: #{e.message}"
+        Rails.logger.error "メール送信に失敗しました: #{e.class} - #{e.message}"
+        Rails.logger.error e.backtrace.join("\n") if Rails.env.production?
         mail_sent = false
       end
       notice_message = mail_sent ? '予約を更新しました。変更通知メールを送信しました。' : '予約を更新しました。（メール送信はスキップされました）'
@@ -138,15 +132,12 @@ class ReservationsController < ApplicationController
       mail_sent = false
       if user_email.present?
         begin
-          if Rails.env.development?
-            ReservationMailer.cancellation_email(reservation_copy, user_email).deliver_now
-            mail_sent = true
-          else
-            ReservationMailer.cancellation_email(reservation_copy, user_email).deliver_later
-            mail_sent = true
-          end
+          ReservationMailer.cancellation_email(reservation_copy, user_email).deliver_now
+          mail_sent = true
+          Rails.logger.info "予約キャンセル通知メールを送信しました: reservation_id=#{reservation_copy.id}, user_email=#{user_email}"
         rescue => e
-          Rails.logger.warn "メール送信に失敗しました: #{e.message}"
+          Rails.logger.error "メール送信に失敗しました: #{e.class} - #{e.message}"
+          Rails.logger.error e.backtrace.join("\n") if Rails.env.production?
           mail_sent = false
         end
       end
