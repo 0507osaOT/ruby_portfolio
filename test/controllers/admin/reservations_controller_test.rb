@@ -2,7 +2,7 @@ require "test_helper"
 
 class Admin::ReservationsControllerTest < ActionDispatch::IntegrationTest
   # TODO: Add proper tests with admin authentication
-  
+
   # test "should get index" do
   #   get admin_reservations_index_url
   #   assert_response :success

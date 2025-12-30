@@ -2,7 +2,7 @@ require "test_helper"
 
 class ReservationsControllerTest < ActionDispatch::IntegrationTest
   # TODO: Add proper tests with Devise authentication
-  
+
   # test "should get new" do
   #   get reservations_new_url
   #   assert_response :success
