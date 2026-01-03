@@ -3,6 +3,12 @@
 ◾️仕様書
 https://docs.google.com/spreadsheets/d/1Jl-OSbezxKP92fu0ab0bG83ZYvw4CHPMdt6OWzyhsH0/edit?gid=621927627#gid=621927627
 
+◾️【本番環境：Render】
+https://ruby-portfolio-pkff.onrender.com/users/sign_in
+
+◾️【動画】
+https://youtu.be/ut_iScZIQVM
+
 【概要】
 
 飲食店や美容院などの予約を管理できる Web アプリケーションを実装しました。ユーザーは自分の予約を作成・確認でき、管理者は全ての予約を管理できます。
