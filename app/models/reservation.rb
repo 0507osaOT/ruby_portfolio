@@ -132,12 +132,15 @@ class Reservation < ApplicationRecord
 
     # 過去の日時での予約を防ぐ
     now = Time.current
+    Rails.logger.debug "Validation: start_time=#{start_time} (#{start_time.zone}), now=#{now} (#{now.zone}), diff=#{(start_time - now).to_i} seconds"
     if start_time < now
+      Rails.logger.warn "Validation failed: start_time (#{start_time}) is before now (#{now})"
       errors.add(:base, "過去の日時での予約はできません")
       return
     end
 
     if end_time < now
+      Rails.logger.warn "Validation failed: end_time (#{end_time}) is before now (#{now})"
       errors.add(:base, "過去の日時での予約はできません")
       return
     end

@@ -37,7 +37,7 @@
   <%= javascript_include_tag "reservation-validation", "data-turbo-track": "reload", defer: true %>
   
   <!-- カレンダー用JavaScript -->
-  <%= javascript_include_tag "reservation-calendar", "data-turbo-track": "reload", defer: true %>
+  <%= javascript_include_tag "reservation-calendar", "data-turbo-track": "reload" %>
 </head>
 <body>
   <div class="header">
@@ -100,6 +100,7 @@
           
           <%= f.hidden_field :start_time, id: "reservation_start_time" %>
           <%= f.hidden_field :end_time, id: "reservation_end_time" %>
+          <%= hidden_field_tag :date, '', id: "reservation_date" %>
           <%= hidden_field_tag :return_to, 'calendars' %>
           
           <div class="form-group">

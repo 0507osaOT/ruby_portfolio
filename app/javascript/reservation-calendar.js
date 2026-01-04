@@ -2,10 +2,12 @@
 
 let calendar;
 
-document.addEventListener('DOMContentLoaded', function() {
+// DOMが既に読み込まれている場合は即座に実行、そうでない場合はDOMContentLoadedを待つ
+function initCalendar() {
   const calendarEl = document.getElementById('calendar');
   
   if (!calendarEl) {
+    console.warn('カレンダー要素が見つかりません');
     return;
   }
   
@@ -62,20 +64,28 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // カレンダーの初期化
-  calendar = new FullCalendar.Calendar(calendarEl, {
-    initialView: 'dayGridMonth',
-    locale: 'ja',
-    headerToolbar: false,
-    height: 'auto',
+  try {
+    // 必要な変数が設定されているか確認
+    if (!window.calendarEventsUrl) {
+      console.error('calendarEventsUrlが設定されていません');
+      alert('カレンダーの設定に問題があります。ページを再読み込みしてください。');
+      return;
+    }
     
-    events: {
-      url: window.calendarEventsUrl,
-      method: 'GET',
-      failure: function(error) {
-        console.error('Failed to load events:', error);
-        alert('予約データの読み込みに失敗しました');
-      }
-    },
+    calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      locale: 'ja',
+      headerToolbar: false,
+      height: 'auto',
+      
+      events: {
+        url: window.calendarEventsUrl,
+        method: 'GET',
+        failure: function(error) {
+          console.error('Failed to load events:', error);
+          alert('予約データの読み込みに失敗しました');
+        }
+      },
     
     eventDidMount: function(info) {
       // 過去の予約かどうかをチェック（過去の予約も通常通り表示）
@@ -242,6 +252,12 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   
   calendar.render();
+  console.log('カレンダーが正常に初期化されました');
+  } catch (error) {
+    console.error('カレンダーの初期化に失敗しました:', error);
+    alert('カレンダーの表示に失敗しました。ページを再読み込みしてください。');
+    return;
+  }
   
   // ナビゲーションボタン
   const prevBtn = document.getElementById('prev-btn');
@@ -333,13 +349,9 @@ document.addEventListener('DOMContentLoaded', function() {
       const endTimeInput = document.getElementById('reservation_end_time');
       const dateDisplay = document.getElementById('reservation_date_display');
       
+      // サーバーから送られてきた日時をローカルタイムゾーンで解釈
       const startTime = new Date(window.reservationParams.start_time);
       const endTime = new Date(window.reservationParams.end_time);
-      
-      if (startTimeInput && endTimeInput) {
-        startTimeInput.value = startTime.toISOString();
-        endTimeInput.value = endTime.toISOString();
-      }
       
       const startHourPicker = document.getElementById('start_hour_input');
       const startMinutePicker = document.getElementById('start_minute_input');
@@ -374,9 +386,32 @@ document.addEventListener('DOMContentLoaded', function() {
         const day = String(startTime.getDate()).padStart(2, '0');
         dateDisplay.textContent = year + '年' + month + '月' + day + '日';
       }
+      
+      // 日付のhiddenフィールドにも値を設定
+      const dateInput = document.getElementById('reservation_date');
+      if (dateInput) {
+        const year = startTime.getFullYear();
+        const month = String(startTime.getMonth() + 1).padStart(2, '0');
+        const day = String(startTime.getDate()).padStart(2, '0');
+        dateInput.value = `${year}-${month}-${day}`;
+      }
+      
+      // updateHiddenTimeFields()を呼び出して、正しい形式でhiddenフィールドを更新
+      // これにより、ローカルタイムゾーンの日時が正しく送信される
+      setTimeout(function() {
+        updateHiddenTimeFields();
+      }, 100);
     }
   }
-});
+}
+
+// DOMが既に読み込まれている場合は即座に実行
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initCalendar);
+} else {
+  // DOMが既に読み込まれている場合は即座に実行
+  initCalendar();
+}
 
 function updateDatePicker() {
   const datePicker = document.getElementById('datePicker');
@@ -475,21 +510,31 @@ function closeModal() {
 }
 
 function openReservationForm(date) {
-  // 過去の日付チェック
+  // FullCalendarから渡されるdateはDateオブジェクトなので、そのまま使用
+  // ただし、タイムゾーンの問題を避けるため、年月日を直接取得
   const selectedDate = new Date(date);
+  console.log('openReservationForm: 受け取ったdate', date, 'selectedDate', selectedDate);
+  
+  // 年月日をUTCではなくローカルタイムゾーンで取得
+  const year = selectedDate.getFullYear();
+  const month = selectedDate.getMonth(); // 0-11
+  const day = selectedDate.getDate();
+  console.log('openReservationForm: 抽出した年月日', { year, month: month + 1, day });
+  
+  // 日付比較用に新しいDateオブジェクトを作成（時間を00:00:00に設定）
+  const selectedDateForCompare = new Date(year, month, day);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  selectedDate.setHours(0, 0, 0, 0);
+  selectedDateForCompare.setHours(0, 0, 0, 0);
   
-  if (selectedDate < today) {
+  if (selectedDateForCompare < today) {
     alert('過去の日付は予約できません');
     return;
   }
   
   // 選択された日付の9:00-10:00をデフォルトに設定
-  const year = selectedDate.getFullYear();
-  const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-  const day = String(selectedDate.getDate()).padStart(2, '0');
+  const monthStr = String(month + 1).padStart(2, '0');
+  const dayStr = String(day).padStart(2, '0');
   
   // デフォルト時間: 今日の場合は現在時刻以降、明日以降は9:00-10:00
   const now = new Date();
@@ -499,7 +544,7 @@ function openReservationForm(date) {
   let defaultEndMinute = 0;
   
   // 今日の場合は現在時刻以降の最初の10分刻みを設定
-  if (selectedDate.getTime() === today.getTime()) {
+  if (selectedDateForCompare.getTime() === today.getTime()) {
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
     
@@ -524,8 +569,9 @@ function openReservationForm(date) {
     }
   }
   
-  const startTime = new Date(year, selectedDate.getMonth(), selectedDate.getDate(), defaultStartHour, defaultStartMinute, 0);
-  const endTime = new Date(year, selectedDate.getMonth(), selectedDate.getDate(), defaultEndHour, defaultEndMinute, 0);
+  const startTime = new Date(year, month, day, defaultStartHour, defaultStartMinute, 0);
+  const endTime = new Date(year, month, day, defaultEndHour, defaultEndMinute, 0);
+  console.log('openReservationForm: 作成したDateオブジェクト', { startTime, endTime, year, month: month + 1, day });
   
   const startTimeInput = document.getElementById('reservation_start_time');
   const endTimeInput = document.getElementById('reservation_end_time');
@@ -535,64 +581,101 @@ function openReservationForm(date) {
   const endMinutePicker = document.getElementById('end_minute_input');
   const dateDisplay = document.getElementById('reservation_date_display');
   
-  if (startTimeInput && endTimeInput && startHourPicker && startMinutePicker && endHourPicker && endMinutePicker && dateDisplay) {
-    // 日付表示を設定
-    dateDisplay.textContent = year + '年' + month + '月' + day + '日';
+  // 必要な要素の存在確認
+  if (!startTimeInput || !endTimeInput || !startHourPicker || !startMinutePicker || !endHourPicker || !endMinutePicker) {
+    console.error('必要なフォーム要素が見つかりません');
+    return;
+  }
+  
+  // dateDisplayが存在しない場合は作成するか、エラーを表示
+  if (!dateDisplay) {
+    console.error('dateDisplay要素が見つかりません');
+    return;
+  }
+  
+  // 日付表示を設定（必ず設定する）
+  const dateText = year + '年' + monthStr + '月' + dayStr + '日';
+  dateDisplay.textContent = dateText;
+  console.log('openReservationForm: dateDisplayに設定', dateText);
+  
+  // 日付のhiddenフィールドにも値を設定（YYYY-MM-DD形式）
+  const dateInput = document.getElementById('reservation_date');
+  if (dateInput) {
+    dateInput.value = `${year}-${monthStr}-${dayStr}`;
+    console.log('openReservationForm: dateInputに設定', { value: dateInput.value, year, month: month + 1, day });
+  } else {
+    console.warn('reservation_date要素が見つかりません');
+  }
+  
+  // 時間ピッカーにデフォルト値を設定
+  startHourPicker.value = String(defaultStartHour);
+  startMinutePicker.value = String(defaultStartMinute);
+  endHourPicker.value = String(defaultEndHour);
+  endMinutePicker.value = String(defaultEndMinute);
+  
+  // 過去の時間を選択できないようにする
+  const nowForTimeCheck = new Date();
+  const isToday = selectedDateForCompare.getTime() === today.getTime();
+  
+  if (isToday) {
+    // 今日の場合は過去の時間を無効化
+    Array.from(startHourPicker.options).forEach(function(option) {
+      const hour = parseInt(option.value);
+      if (hour < nowForTimeCheck.getHours()) {
+        option.disabled = true;
+      } else if (hour === nowForTimeCheck.getHours()) {
+        // 現在時刻と同じ時間の場合、過去の分を無効化
+        Array.from(startMinutePicker.options).forEach(function(minOption) {
+          const minute = parseInt(minOption.value);
+          if (minute < Math.ceil(nowForTimeCheck.getMinutes() / 10) * 10) {
+            minOption.disabled = true;
+          }
+        });
+      }
+    });
     
-    // 時間ピッカーにデフォルト値を設定
-    startHourPicker.value = String(defaultStartHour);
-    startMinutePicker.value = String(defaultStartMinute);
-    endHourPicker.value = String(defaultEndHour);
-    endMinutePicker.value = String(defaultEndMinute);
+    Array.from(endHourPicker.options).forEach(function(option) {
+      const hour = parseInt(option.value);
+      if (hour < nowForTimeCheck.getHours()) {
+        option.disabled = true;
+      } else if (hour === nowForTimeCheck.getHours()) {
+        Array.from(endMinutePicker.options).forEach(function(minOption) {
+          const minute = parseInt(minOption.value);
+          if (minute < Math.ceil(nowForTimeCheck.getMinutes() / 10) * 10) {
+            minOption.disabled = true;
+          }
+        });
+      }
+    });
+  }
+  
+  // hiddenフィールドに初期値を設定
+  updateHiddenTimeFields();
+  
+  // モーダルを開く前に、再度dateDisplayが設定されていることを確認
+  if (dateDisplay && !dateDisplay.textContent) {
+    dateDisplay.textContent = dateText;
+  }
+  
+  // モーダルを開く
+  const createModal = document.getElementById('createReservationModal');
+  if (createModal) {
+    createModal.style.display = 'block';
     
-    // 過去の時間を選択できないようにする
-    const now = new Date();
-    const isToday = selectedDate.getTime() === today.getTime();
-    
-    if (isToday) {
-      // 今日の場合は過去の時間を無効化
-      Array.from(startHourPicker.options).forEach(function(option) {
-        const hour = parseInt(option.value);
-        if (hour < now.getHours()) {
-          option.disabled = true;
-        } else if (hour === now.getHours()) {
-          // 現在時刻と同じ時間の場合、過去の分を無効化
-          Array.from(startMinutePicker.options).forEach(function(minOption) {
-            const minute = parseInt(minOption.value);
-            if (minute < Math.ceil(now.getMinutes() / 10) * 10) {
-              minOption.disabled = true;
-            }
-          });
-        }
-      });
-      
-      Array.from(endHourPicker.options).forEach(function(option) {
-        const hour = parseInt(option.value);
-        if (hour < now.getHours()) {
-          option.disabled = true;
-        } else if (hour === now.getHours()) {
-          Array.from(endMinutePicker.options).forEach(function(minOption) {
-            const minute = parseInt(minOption.value);
-            if (minute < Math.ceil(now.getMinutes() / 10) * 10) {
-              minOption.disabled = true;
-            }
-          });
-        }
-      });
-    }
-    
-    // hiddenフィールドに初期値を設定
-    updateHiddenTimeFields();
-    
-    // モーダルを開く
-    const createModal = document.getElementById('createReservationModal');
-    if (createModal) {
-      createModal.style.display = 'block';
-    }
+    // モーダルが開かれた後、再度確認
+    setTimeout(function() {
+      if (dateDisplay && !dateDisplay.textContent) {
+        dateDisplay.textContent = dateText;
+      }
+      if (dateInput && !dateInput.value) {
+        dateInput.value = `${year}-${monthStr}-${dayStr}`;
+      }
+      updateHiddenTimeFields();
+    }, 100);
   }
 }
 
-// 時間ピッカーの変更時にhiddenフィールドを更新
+  // 時間ピッカーの変更時にhiddenフィールドを更新
 function updateHiddenTimeFields() {
   const startHourPicker = document.getElementById('start_hour_input');
   const startMinutePicker = document.getElementById('start_minute_input');
@@ -601,16 +684,33 @@ function updateHiddenTimeFields() {
   const startTimeInput = document.getElementById('reservation_start_time');
   const endTimeInput = document.getElementById('reservation_end_time');
   const dateDisplay = document.getElementById('reservation_date_display');
+  const dateInput = document.getElementById('reservation_date');
   
   if (!startHourPicker || !startMinutePicker || !endHourPicker || !endMinutePicker || !startTimeInput || !endTimeInput) {
     console.error('必要な要素が見つかりません');
     return;
   }
   
-  // 日付を取得（dateDisplayから、または現在の日付）
-  let year, month, day;
+  // 日付を取得（優先順位: dateInput > dateDisplay > 現在の日付）
+  let year = null, month = null, day = null;
   
-  if (dateDisplay && dateDisplay.textContent) {
+  // まず、日付のhiddenフィールドから取得を試みる
+  if (dateInput && dateInput.value) {
+    const dateMatch = dateInput.value.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (dateMatch) {
+      year = parseInt(dateMatch[1]);
+      month = parseInt(dateMatch[2]) - 1; // 月は0から始まる
+      day = parseInt(dateMatch[3]);
+      console.log('updateHiddenTimeFields: dateInputから日付を取得', { year, month: month + 1, day, dateInputValue: dateInput.value });
+    } else {
+      console.warn('updateHiddenTimeFields: dateInput.valueの正規表現マッチに失敗', dateInput.value);
+    }
+  } else {
+    console.warn('updateHiddenTimeFields: dateInputが見つからないか、valueが空', { dateInput: !!dateInput, value: dateInput?.value });
+  }
+  
+  // dateInputから取得できない場合、dateDisplayから取得を試みる
+  if ((year === null || month === null || day === null) && dateDisplay && dateDisplay.textContent) {
     const dateText = dateDisplay.textContent;
     const dateMatch = dateText.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
     
@@ -618,16 +718,33 @@ function updateHiddenTimeFields() {
       year = parseInt(dateMatch[1]);
       month = parseInt(dateMatch[2]) - 1; // 月は0から始まる
       day = parseInt(dateMatch[3]);
+      console.log('updateHiddenTimeFields: dateDisplayから日付を取得', { year, month: month + 1, day, dateDisplayText: dateText });
+      
+      // dateInputにも値を設定（次回のために）
+      if (dateInput) {
+        const monthStr = String(month + 1).padStart(2, '0');
+        const dayStr = String(day).padStart(2, '0');
+        dateInput.value = `${year}-${monthStr}-${dayStr}`;
+      }
+    } else {
+      console.warn('updateHiddenTimeFields: dateDisplay.textContentの正規表現マッチに失敗', dateText);
     }
   }
   
-  // dateDisplayから取得できない場合は、現在の日付を使用
-  if (!year || !month || !day) {
+  // どちらからも取得できない場合は、現在の日付を使用（フォールバック）
+  if (year === null || month === null || day === null) {
     const now = new Date();
     year = now.getFullYear();
     month = now.getMonth();
     day = now.getDate();
-    console.warn('日付表示から日付を取得できなかったため、現在の日付を使用します');
+    console.warn('日付を取得できなかったため、現在の日付を使用します', { year, month: month + 1, day });
+    
+    // dateInputにも値を設定
+    if (dateInput) {
+      const monthStr = String(month + 1).padStart(2, '0');
+      const dayStr = String(day).padStart(2, '0');
+      dateInput.value = `${year}-${monthStr}-${dayStr}`;
+    }
   }
   
   // 時間と分を取得
@@ -636,13 +753,41 @@ function updateHiddenTimeFields() {
   const endHour = parseInt(endHourPicker.value) || 10;
   const endMinute = parseInt(endMinutePicker.value) || 0;
   
-  // Dateオブジェクトを作成
+  // Dateオブジェクトを作成（ローカルタイムゾーン）
   const startTime = new Date(year, month, day, startHour, startMinute, 0);
   const endTime = new Date(year, month, day, endHour, endMinute, 0);
   
-  // hiddenフィールドにISO形式で設定
-  startTimeInput.value = startTime.toISOString();
-  endTimeInput.value = endTime.toISOString();
+  console.log('updateHiddenTimeFields: Dateオブジェクト作成', {
+    year, month: month + 1, day,
+    startHour, startMinute,
+    endHour, endMinute,
+    startTimeDate: startTime,
+    endTimeDate: endTime
+  });
+  
+  // ローカルタイムゾーンの日時を正しく送信する形式に変換
+  // YYYY-MM-DDTHH:mm:ss 形式で送信（タイムゾーンオフセットなし、サーバー側でTokyoタイムゾーンとして解釈）
+  function formatLocalDateTime(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    
+    // タイムゾーンオフセットを含めずに送信（サーバー側でTokyoタイムゾーンとして解釈される）
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+  }
+  
+  const startTimeStr = formatLocalDateTime(startTime);
+  const endTimeStr = formatLocalDateTime(endTime);
+  startTimeInput.value = startTimeStr;
+  endTimeInput.value = endTimeStr;
+  
+  console.log('updateHiddenTimeFields: hiddenフィールドに設定', {
+    start_time: startTimeStr,
+    end_time: endTimeStr
+  });
 }
 
 // 時間ピッカーにイベントリスナーを追加
@@ -670,6 +815,16 @@ document.addEventListener('DOMContentLoaded', function() {
   const form = document.getElementById('reservationForm');
   if (form) {
     form.addEventListener('submit', function(e) {
+      // 日付表示が空でないことを確認
+      const dateDisplay = document.getElementById('reservation_date_display');
+      const dateInput = document.getElementById('reservation_date');
+      
+      if (!dateDisplay || !dateDisplay.textContent || dateDisplay.textContent.trim() === '') {
+        e.preventDefault();
+        alert('予約日が設定されていません。カレンダーから日付を選択してください。');
+        return false;
+      }
+      
       // hiddenフィールドを確実に更新
       updateHiddenTimeFields();
       
@@ -688,6 +843,21 @@ document.addEventListener('DOMContentLoaded', function() {
         alert('終了時間が設定されていません。');
         return false;
       }
+      
+      // 日付のhiddenフィールドも確認
+      if (!dateInput || !dateInput.value) {
+        e.preventDefault();
+        alert('予約日が設定されていません。');
+        return false;
+      }
+      
+      // デバッグ用ログ（本番環境では削除可能）
+      console.log('送信される日時:', {
+        date: dateInput.value,
+        start_time: startTimeInput.value,
+        end_time: endTimeInput.value,
+        dateDisplay: dateDisplay.textContent
+      });
       
       // バリデーション: 共通のバリデーション関数を使用
       if (!window.ReservationValidation.validateReservationForm(
