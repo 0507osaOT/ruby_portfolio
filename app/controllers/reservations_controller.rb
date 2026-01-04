@@ -27,33 +27,26 @@ class ReservationsController < ApplicationController
     reservation_params_parsed = reservation_params.dup
     if reservation_params_parsed[:start_time].present?
       start_time_str = reservation_params_parsed[:start_time]
-      Rails.logger.debug "Received start_time string: #{start_time_str}"
       # タイムゾーン情報がない形式（YYYY-MM-DDTHH:mm:ss）の場合は、明示的にTokyoタイムゾーンとして解釈
       if start_time_str.match?(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/)
         match_data = start_time_str.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/)
         year, month, day, hour, min, sec = match_data[1..6].map(&:to_i)
         reservation_params_parsed[:start_time] = Time.zone.local(year, month, day, hour, min, sec)
-        Rails.logger.debug "Parsed start_time (local): #{reservation_params_parsed[:start_time]} (#{reservation_params_parsed[:start_time].zone})"
       else
         reservation_params_parsed[:start_time] = Time.zone.parse(start_time_str)
-        Rails.logger.debug "Parsed start_time (parse): #{reservation_params_parsed[:start_time]} (#{reservation_params_parsed[:start_time].zone})"
       end
     end
     if reservation_params_parsed[:end_time].present?
       end_time_str = reservation_params_parsed[:end_time]
-      Rails.logger.debug "Received end_time string: #{end_time_str}"
       # タイムゾーン情報がない形式（YYYY-MM-DDTHH:mm:ss）の場合は、明示的にTokyoタイムゾーンとして解釈
       if end_time_str.match?(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/)
         match_data = end_time_str.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/)
         year, month, day, hour, min, sec = match_data[1..6].map(&:to_i)
         reservation_params_parsed[:end_time] = Time.zone.local(year, month, day, hour, min, sec)
-        Rails.logger.debug "Parsed end_time (local): #{reservation_params_parsed[:end_time]} (#{reservation_params_parsed[:end_time].zone})"
       else
         reservation_params_parsed[:end_time] = Time.zone.parse(end_time_str)
-        Rails.logger.debug "Parsed end_time (parse): #{reservation_params_parsed[:end_time]} (#{reservation_params_parsed[:end_time].zone})"
       end
     end
-    Rails.logger.debug "Time.current: #{Time.current} (#{Time.current.zone})"
 
     @reservation = Reservation.new(reservation_params_parsed)
     @reservation.user = current_user

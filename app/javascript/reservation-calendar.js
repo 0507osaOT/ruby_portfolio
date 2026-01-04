@@ -513,13 +513,11 @@ function openReservationForm(date) {
   // FullCalendarから渡されるdateはDateオブジェクトなので、そのまま使用
   // ただし、タイムゾーンの問題を避けるため、年月日を直接取得
   const selectedDate = new Date(date);
-  console.log('openReservationForm: 受け取ったdate', date, 'selectedDate', selectedDate);
   
   // 年月日をUTCではなくローカルタイムゾーンで取得
   const year = selectedDate.getFullYear();
   const month = selectedDate.getMonth(); // 0-11
   const day = selectedDate.getDate();
-  console.log('openReservationForm: 抽出した年月日', { year, month: month + 1, day });
   
   // 日付比較用に新しいDateオブジェクトを作成（時間を00:00:00に設定）
   const selectedDateForCompare = new Date(year, month, day);
@@ -571,7 +569,6 @@ function openReservationForm(date) {
   
   const startTime = new Date(year, month, day, defaultStartHour, defaultStartMinute, 0);
   const endTime = new Date(year, month, day, defaultEndHour, defaultEndMinute, 0);
-  console.log('openReservationForm: 作成したDateオブジェクト', { startTime, endTime, year, month: month + 1, day });
   
   const startTimeInput = document.getElementById('reservation_start_time');
   const endTimeInput = document.getElementById('reservation_end_time');
@@ -596,15 +593,11 @@ function openReservationForm(date) {
   // 日付表示を設定（必ず設定する）
   const dateText = year + '年' + monthStr + '月' + dayStr + '日';
   dateDisplay.textContent = dateText;
-  console.log('openReservationForm: dateDisplayに設定', dateText);
   
   // 日付のhiddenフィールドにも値を設定（YYYY-MM-DD形式）
   const dateInput = document.getElementById('reservation_date');
   if (dateInput) {
     dateInput.value = `${year}-${monthStr}-${dayStr}`;
-    console.log('openReservationForm: dateInputに設定', { value: dateInput.value, year, month: month + 1, day });
-  } else {
-    console.warn('reservation_date要素が見つかりません');
   }
   
   // 時間ピッカーにデフォルト値を設定
@@ -701,12 +694,7 @@ function updateHiddenTimeFields() {
       year = parseInt(dateMatch[1]);
       month = parseInt(dateMatch[2]) - 1; // 月は0から始まる
       day = parseInt(dateMatch[3]);
-      console.log('updateHiddenTimeFields: dateInputから日付を取得', { year, month: month + 1, day, dateInputValue: dateInput.value });
-    } else {
-      console.warn('updateHiddenTimeFields: dateInput.valueの正規表現マッチに失敗', dateInput.value);
     }
-  } else {
-    console.warn('updateHiddenTimeFields: dateInputが見つからないか、valueが空', { dateInput: !!dateInput, value: dateInput?.value });
   }
   
   // dateInputから取得できない場合、dateDisplayから取得を試みる
@@ -718,7 +706,6 @@ function updateHiddenTimeFields() {
       year = parseInt(dateMatch[1]);
       month = parseInt(dateMatch[2]) - 1; // 月は0から始まる
       day = parseInt(dateMatch[3]);
-      console.log('updateHiddenTimeFields: dateDisplayから日付を取得', { year, month: month + 1, day, dateDisplayText: dateText });
       
       // dateInputにも値を設定（次回のために）
       if (dateInput) {
@@ -726,8 +713,6 @@ function updateHiddenTimeFields() {
         const dayStr = String(day).padStart(2, '0');
         dateInput.value = `${year}-${monthStr}-${dayStr}`;
       }
-    } else {
-      console.warn('updateHiddenTimeFields: dateDisplay.textContentの正規表現マッチに失敗', dateText);
     }
   }
   
@@ -737,7 +722,6 @@ function updateHiddenTimeFields() {
     year = now.getFullYear();
     month = now.getMonth();
     day = now.getDate();
-    console.warn('日付を取得できなかったため、現在の日付を使用します', { year, month: month + 1, day });
     
     // dateInputにも値を設定
     if (dateInput) {
@@ -757,14 +741,6 @@ function updateHiddenTimeFields() {
   const startTime = new Date(year, month, day, startHour, startMinute, 0);
   const endTime = new Date(year, month, day, endHour, endMinute, 0);
   
-  console.log('updateHiddenTimeFields: Dateオブジェクト作成', {
-    year, month: month + 1, day,
-    startHour, startMinute,
-    endHour, endMinute,
-    startTimeDate: startTime,
-    endTimeDate: endTime
-  });
-  
   // ローカルタイムゾーンの日時を正しく送信する形式に変換
   // YYYY-MM-DDTHH:mm:ss 形式で送信（タイムゾーンオフセットなし、サーバー側でTokyoタイムゾーンとして解釈）
   function formatLocalDateTime(date) {
@@ -783,11 +759,6 @@ function updateHiddenTimeFields() {
   const endTimeStr = formatLocalDateTime(endTime);
   startTimeInput.value = startTimeStr;
   endTimeInput.value = endTimeStr;
-  
-  console.log('updateHiddenTimeFields: hiddenフィールドに設定', {
-    start_time: startTimeStr,
-    end_time: endTimeStr
-  });
 }
 
 // 時間ピッカーにイベントリスナーを追加
@@ -850,14 +821,6 @@ document.addEventListener('DOMContentLoaded', function() {
         alert('予約日が設定されていません。');
         return false;
       }
-      
-      // デバッグ用ログ（本番環境では削除可能）
-      console.log('送信される日時:', {
-        date: dateInput.value,
-        start_time: startTimeInput.value,
-        end_time: endTimeInput.value,
-        dateDisplay: dateDisplay.textContent
-      });
       
       // バリデーション: 共通のバリデーション関数を使用
       if (!window.ReservationValidation.validateReservationForm(
