@@ -1,5 +1,6 @@
 class Admin::ReservationsController < Admin::BaseController
   before_action :authorize_reservation, except: [ :calendars, :calendar, :calendar_events, :available_slots ]
+  before_action :set_reservation, only: [:show, :destroy]
 
   layout "admin", except: :calendars
 
@@ -123,18 +124,20 @@ class Admin::ReservationsController < Admin::BaseController
   end
 
   def show
-    @reservation = Reservation.find(params[:id])
     authorize @reservation, :show?, policy_class: AdminReservationPolicy
   end
 
   def destroy
-    @reservation = Reservation.find(params[:id])
     authorize @reservation, :destroy?, policy_class: AdminReservationPolicy
     @reservation.destroy
     redirect_to list_admin_reservations_path, notice: "予約を削除しました"
   end
 
   private
+
+  def set_reservation
+    @reservation = Reservation.find(params[:id])
+  end
 
   def authorize_reservation
     authorize :reservation, policy_class: AdminReservationPolicy

@@ -17,29 +17,22 @@
   <!-- FullCalendar JS -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
   
-  <!-- グローバル変数の設定 -->
-  <script>
-    window.calendarEventsUrl = '<%= calendar_events_reservations_path %>';
-    window.reservationsPath = '<%= new_reservation_path %>';
-    window.currentUserId = <%= current_user&.id || 'null' %>;
-    window.currentUserIsAdmin = <%= (current_user&.admin? ? 'true' : 'false') %>;
-    <% if @reservation_params && @reservation_params[:start_time].present? %>
-      window.reservationParams = {
-        start_time: '<%= @reservation_params[:start_time] %>',
-        end_time: '<%= @reservation_params[:end_time] %>'
-      };
-    <% else %>
-      window.reservationParams = null;
-    <% end %>
-  </script>
-  
   <!-- 共通バリデーションJavaScript -->
   <%= javascript_include_tag "reservation-validation", "data-turbo-track": "reload", defer: true %>
   
   <!-- カレンダー用JavaScript -->
   <%= javascript_include_tag "reservation-calendar", "data-turbo-track": "reload" %>
 </head>
-<body>
+<body
+  data-calendar-events-url="<%= calendar_events_reservations_path %>"
+  data-reservations-path="<%= new_reservation_path %>"
+  data-current-user-id="<%= current_user&.id || '' %>"
+  data-current-user-is-admin="<%= current_user&.admin? ? 'true' : 'false' %>"
+  <% if @reservation_params && @reservation_params[:start_time].present? %>
+    data-reservation-params-start-time="<%= @reservation_params[:start_time] %>"
+    data-reservation-params-end-time="<%= @reservation_params[:end_time] %>"
+  <% end %>
+>
   <div class="header">
     <h1>カレンダー - 予約管理システム</h1>
     <div class="header-buttons">

@@ -15,14 +15,11 @@
   
   <!-- FullCalendar JS -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
-  
-  <!-- グローバル変数の設定 -->
-  <script>
-    window.calendarEventsUrl = '<%= calendar_events_admin_reservations_path %>';
-    window.reservationsPath = '<%= admin_reservations_path %>';
-  </script>
 </head>
-<body>
+<body
+  data-calendar-events-url="<%= calendar_events_admin_reservations_path %>"
+  data-reservations-path="<%= admin_reservations_path %>"
+>
   <div class="header">
     <h1>カレンダー - 予約管理システム</h1>
     <div class="header-buttons">

@@ -65,8 +65,33 @@ function initCalendar() {
   
   // カレンダーの初期化
   try {
+    // data-*属性から値を取得
+    const body = document.body;
+    const calendarEventsUrl = body.dataset.calendarEventsUrl;
+    const reservationsPath = body.dataset.reservationsPath;
+    const currentUserId = body.dataset.currentUserId || null;
+    const currentUserIsAdmin = body.dataset.currentUserIsAdmin === 'true';
+    const reservationParamsStartTime = body.dataset.reservationParamsStartTime;
+    const reservationParamsEndTime = body.dataset.reservationParamsEndTime;
+    
+    // グローバル変数に設定（後方互換性のため）
+    window.calendarEventsUrl = calendarEventsUrl;
+    window.reservationsPath = reservationsPath;
+    window.currentUserId = currentUserId ? parseInt(currentUserId) : null;
+    window.currentUserIsAdmin = currentUserIsAdmin;
+    
+    // reservationParamsを設定
+    if (reservationParamsStartTime && reservationParamsEndTime) {
+      window.reservationParams = {
+        start_time: reservationParamsStartTime,
+        end_time: reservationParamsEndTime
+      };
+    } else {
+      window.reservationParams = null;
+    }
+    
     // 必要な変数が設定されているか確認
-    if (!window.calendarEventsUrl) {
+    if (!calendarEventsUrl) {
       console.error('calendarEventsUrlが設定されていません');
       alert('カレンダーの設定に問題があります。ページを再読み込みしてください。');
       return;
@@ -79,7 +104,7 @@ function initCalendar() {
       height: 'auto',
       
       events: {
-        url: window.calendarEventsUrl,
+        url: calendarEventsUrl,
         method: 'GET',
         failure: function(error) {
           console.error('Failed to load events:', error);
@@ -741,9 +766,15 @@ function updateHiddenTimeFields() {
   const startTime = new Date(year, month, day, startHour, startMinute, 0);
   const endTime = new Date(year, month, day, endHour, endMinute, 0);
   
-  // ローカルタイムゾーンの日時を正しく送信する形式に変換
-  // YYYY-MM-DDTHH:mm:ss 形式で送信（タイムゾーンオフセットなし、サーバー側でTokyoタイムゾーンとして解釈）
+  // ローカルタイムゾーンの日時をISO 8601形式（タイムゾーン情報付き）で送信
   function formatLocalDateTime(date) {
+    // ローカルタイムゾーンのオフセットを取得（分単位）
+    const offset = -date.getTimezoneOffset();
+    const offsetHours = Math.floor(Math.abs(offset) / 60);
+    const offsetMinutes = Math.abs(offset) % 60;
+    const offsetSign = offset >= 0 ? '+' : '-';
+    const offsetStr = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`;
+    
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
@@ -751,8 +782,8 @@ function updateHiddenTimeFields() {
     const minutes = String(date.getMinutes()).padStart(2, '0');
     const seconds = String(date.getSeconds()).padStart(2, '0');
     
-    // タイムゾーンオフセットを含めずに送信（サーバー側でTokyoタイムゾーンとして解釈される）
-    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+    // ISO 8601形式（タイムゾーン情報付き）で送信
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetStr}`;
   }
   
   const startTimeStr = formatLocalDateTime(startTime);
