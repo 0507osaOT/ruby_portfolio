@@ -1,6 +1,6 @@
 class Admin::ReservationsController < Admin::BaseController
   before_action :authorize_reservation, except: [ :calendars, :calendar, :calendar_events, :available_slots ]
-  before_action :set_reservation, only: [:show, :destroy]
+  before_action :set_reservation, only: [ :show, :destroy ]
 
   layout "admin", except: :calendars
 
