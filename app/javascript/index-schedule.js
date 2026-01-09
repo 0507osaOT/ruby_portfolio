@@ -64,6 +64,14 @@
       return;
     }
 
+    // data-*属性から値を取得
+    const currentUserId = calendarEl.dataset.currentUserId || null;
+    const currentUserIsAdmin = calendarEl.dataset.currentUserIsAdmin === 'true';
+    
+    // グローバル変数に設定（後方互換性のため）
+    window.currentUserId = currentUserId ? parseInt(currentUserId) : null;
+    window.currentUserIsAdmin = currentUserIsAdmin;
+
     const dateStr = calendarEl.dataset.date;
     const statusEl = document.getElementById('status');
     

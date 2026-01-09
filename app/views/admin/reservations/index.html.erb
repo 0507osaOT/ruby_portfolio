@@ -48,12 +48,11 @@
   </div>
 </div>
 
-<%= javascript_include_tag "index-schedule", "data-turbo-track": "reload", defer: true %>
+
 
 <script>
   // 現在のユーザーIDと管理者フラグをJavaScriptに渡す
   window.currentUserId = <%= current_user&.id || 'null' %>;
   window.currentUserIsAdmin = <%= (current_user&.admin? ? 'true' : 'false') %>;
-  
-  <%= File.read(Rails.root.join('app/javascript/index-schedule.js')).html_safe %>
+
 </script>

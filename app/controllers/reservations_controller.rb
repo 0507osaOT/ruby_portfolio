@@ -1,5 +1,6 @@
 class ReservationsController < ApplicationController
   before_action :authenticate_user!
+  before_action :set_reservation, only: [ :show, :update, :destroy ]
 
   layout "admin"
 
@@ -22,30 +23,13 @@ class ReservationsController < ApplicationController
   def create
     authorize :reservation, :create?
 
-    # 日時文字列を明示的にパース（タイムゾーンを考慮）
-    # JavaScriptから送信されるYYYY-MM-DDTHH:mm:ss形式の文字列をTokyoタイムゾーンとして解釈
+    # 日時文字列をパース（ISO 8601形式（タイムゾーン情報付き）で送信されるため、Time.zone.parseで直接パース可能）
     reservation_params_parsed = reservation_params.dup
     if reservation_params_parsed[:start_time].present?
-      start_time_str = reservation_params_parsed[:start_time]
-      # タイムゾーン情報がない形式（YYYY-MM-DDTHH:mm:ss）の場合は、明示的にTokyoタイムゾーンとして解釈
-      if start_time_str.match?(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/)
-        match_data = start_time_str.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/)
-        year, month, day, hour, min, sec = match_data[1..6].map(&:to_i)
-        reservation_params_parsed[:start_time] = Time.zone.local(year, month, day, hour, min, sec)
-      else
-        reservation_params_parsed[:start_time] = Time.zone.parse(start_time_str)
-      end
+      reservation_params_parsed[:start_time] = Time.zone.parse(reservation_params_parsed[:start_time])
     end
     if reservation_params_parsed[:end_time].present?
-      end_time_str = reservation_params_parsed[:end_time]
-      # タイムゾーン情報がない形式（YYYY-MM-DDTHH:mm:ss）の場合は、明示的にTokyoタイムゾーンとして解釈
-      if end_time_str.match?(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/)
-        match_data = end_time_str.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/)
-        year, month, day, hour, min, sec = match_data[1..6].map(&:to_i)
-        reservation_params_parsed[:end_time] = Time.zone.local(year, month, day, hour, min, sec)
-      else
-        reservation_params_parsed[:end_time] = Time.zone.parse(end_time_str)
-      end
+      reservation_params_parsed[:end_time] = Time.zone.parse(reservation_params_parsed[:end_time])
     end
 
     @reservation = Reservation.new(reservation_params_parsed)
@@ -119,12 +103,10 @@ class ReservationsController < ApplicationController
   end
 
   def show
-    @reservation = Reservation.find(params[:id])
     authorize @reservation, :show?
   end
 
   def update
-    @reservation = Reservation.find(params[:id])
     authorize @reservation, :update?
 
     if @reservation.update(reservation_params)
@@ -147,7 +129,6 @@ class ReservationsController < ApplicationController
   end
 
   def destroy
-    @reservation = Reservation.find(params[:id])
     authorize @reservation, :destroy?
 
     user_email = @reservation.user&.email
@@ -304,6 +285,10 @@ class ReservationsController < ApplicationController
   end
 
   private
+
+  def set_reservation
+    @reservation = Reservation.find(params[:id])
+  end
 
   def reservation_params
     params.require(:reservation).permit(:start_time, :end_time, :customer_name, :customer_email, :customer_phone, :notes)

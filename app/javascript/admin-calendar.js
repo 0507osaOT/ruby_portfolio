@@ -16,6 +16,15 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
   
+  // data-*属性から値を取得
+  const body = document.body;
+  const calendarEventsUrl = body.dataset.calendarEventsUrl;
+  const reservationsPath = body.dataset.reservationsPath;
+  
+  // グローバル変数に設定（後方互換性のため）
+  window.calendarEventsUrl = calendarEventsUrl;
+  window.reservationsPath = reservationsPath;
+  
   // ユーザーごとに色を割り当てる関数（ハッシュベースで一貫性を保つ）
   const colorPalette = [
     { bg: '#3498db', text: '#ffffff' }, // 青
@@ -54,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
     height: 'auto',
     
     events: {
-      url: window.calendarEventsUrl,
+      url: calendarEventsUrl,
       method: 'GET',
       failure: function(error) {
         console.error('Failed to load events:', error);

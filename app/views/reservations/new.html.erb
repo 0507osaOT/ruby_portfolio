@@ -21,7 +21,10 @@
 </div>
 
 <div id="status">カレンダーを読み込んでいます...</div>
-<div id="calendar" data-date="<%= @date.strftime('%Y-%m-%d') %>"></div>
+<div id="calendar" 
+     data-date="<%= @date.strftime('%Y-%m-%d') %>"
+     data-current-user-id="<%= current_user&.id || '' %>"
+     data-current-user-is-admin="<%= current_user&.admin? ? 'true' : 'false' %>"></div>
 
 <!-- 予約詳細モーダル -->
 <div id="reservationModal" class="modal">
@@ -136,14 +139,6 @@
 </div>
 
 <%= javascript_include_tag "index-schedule", "data-turbo-track": "reload", defer: true %>
-
-<script>
-  // 現在のユーザーIDをJavaScriptに渡す
-  window.currentUserId = <%= current_user&.id || 'null' %>;
-  window.currentUserIsAdmin = <%= (current_user&.admin? ? 'true' : 'false') %>;
-  
-  <%= File.read(Rails.root.join('app/javascript/index-schedule.js')).html_safe %>
-</script>
 
 <% unless current_user&.admin? %>
   <!-- 共通バリデーションJavaScript -->
